@@ -417,8 +417,17 @@
             const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot } = window.firebase;
             
             let db, auth, userId;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            // Updated Firebase Configuration for external hosting
+            const appId = 'my-finance-dashboard'; // A unique ID for YOUR application's data within Firestore
+            const firebaseConfig = {
+                apiKey: "AIzaSyBbNEUnjH18OT2CUfnLjSy8JzXsnSG_VFI",
+                authDomain: "my-finance-dashboard-b09c7.firebaseapp.com",
+                projectId: "my-finance-dashboard-b09c7",
+                storageBucket: "my-finance-dashboard-b09c7.firebasestorage.app",
+                messagingSenderId: "677172862509",
+                appId: "1:677172862509:web:f16eee24b979151cbd22a4",
+                measurementId: "G-JJ37RP4GYF"
+            };
 
             const loadingOverlay = document.getElementById('loading-overlay');
             
@@ -1167,12 +1176,9 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
 
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-
+                    // Changed authentication to always sign in anonymously for external hosting
+                    await signInAnonymously(auth);
+                    
                     userId = auth.currentUser.uid;
                     console.log('Firebase initialized. User ID:', userId);
 
