@@ -13,7 +13,7 @@
     <!-- Application Structure Plan: A single-page dashboard design is used to provide a centralized and immediate overview of all key financial data. The structure prioritizes usability through: 1) Top-level Key Metrics for a quick health check. 2) A Tabbed Interface to segment detailed information (Weekly Breakdown, Expenses, Savings Goals, Data Input) without overwhelming the user. This prevents a long, confusing page scroll. The flow encourages starting with a high-level summary, then drilling down into specific areas of interest (e.g., "How is my spending allocated?" or "How is our savings goal progressing?"), and now includes a dedicated tab for easy data input and manipulation, which is a more intuitive user journey than a linear report. -->
     <!-- Visualization & Content Choices: 
         - Key Metrics (Cards): Goal: Inform. Method: Large text in HTML cards. Justification: Provides immediate, high-impact visibility of the most critical numbers.
-        - Weekly Breakdown (Donut Charts): Goal: Compare. Method: Chart.js Donut. Justification: Effectively shows the proportion of each person's income allocated to expenses, savings, and disposable income.
+        - Weekly Breakdown (Bar Chart): Goal: Reflect actual weekly spending. Method: Chart.js Horizontal Bar Chart. Justification: Provides a clear, combined view of income allocation including actual variable spending.
         - Expenses Deep Dive (Bar Chart & Table): Goal: Analyze/Compare. Method: Chart.js Horizontal Bar Chart & HTML Table. Justification: The bar chart is superior to a pie chart for comparing the magnitude of different expense categories. The interactive table allows for detailed inspection and sorting of all fixed costs.
         - Savings Goal (Progress Bar & Line Chart): Goal: Track Change/Progress. Method: HTML/CSS Progress Bar & Chart.js Line Chart. Justification: The progress bar offers a simple, visual cue of completion. The line chart effectively illustrates the projected growth of savings over time, which is highly motivating.
         - Data Input (Form/Textareas): Goal: Manipulate/Update Data. Method: HTML input fields and textareas with JS parsing. Justification: Provides a user-friendly interface for updating the underlying data without needing to edit code, enhancing interactivity and usability for ongoing financial tracking.
@@ -104,32 +104,25 @@
                 
                 <section id="weekly" class="tab-pane">
                     <div class="text-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-900">Individual Weekly Summary</h2>
-                        <p class="text-slate-500 mt-1">An overview of how each person's income is allocated per week.</p>
+                        <h2 class="text-2xl font-bold text-slate-900">Combined Weekly Summary</h2>
+                        <p class="text-slate-500 mt-1">An overview of our household's income and how it's allocated per week.</p>
                     </div>
-                    <div class="grid md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 class="text-xl font-bold text-center">Jordan's Week</h3>
+                            <h3 class="text-xl font-bold text-center">Weekly Financial Allocation</h3>
                             <div class="chart-container mx-auto mt-4 max-w-sm">
-                                <canvas id="jordanChart"></canvas>
+                                <canvas id="combinedWeeklyChart"></canvas>
                             </div>
-                            <ul class="mt-4 space-y-2 text-sm">
-                                <li class="flex justify-between items-center"><span class="font-medium">Net Pay:</span> <span class="font-semibold text-green-600" id="jordan-pay"></span></li>
-                                <li class="flex justify-between items-center"><span class="font-medium">Est. Expenses:</span> <span class="font-semibold text-red-600" id="jordan-expenses"></span></li>
-                                <li class="flex justify-between items-center"><span class="font-medium">Savings Contribution:</span> <span class="font-semibold text-blue-600" id="jordan-savings"></span></li>
-                                <li class="flex justify-between items-center border-t pt-2 mt-2"><span class="font-bold">Remaining Disposable:</span> <span class="font-bold text-slate-800" id="jordan-disposable"></span></li>
-                            </ul>
                         </div>
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 class="text-xl font-bold text-center">Emma's Week</h3>
-                            <div class="chart-container mx-auto mt-4 max-w-sm">
-                                <canvas id="emmaChart"></canvas>
-                            </div>
-                            <ul class="mt-4 space-y-2 text-sm">
-                                <li class="flex justify-between items-center"><span class="font-medium">Net Pay:</span> <span class="font-semibold text-green-600" id="emma-pay"></span></li>
-                                <li class="flex justify-between items-center"><span class="font-medium">Est. Expenses:</span> <span class="font-semibold text-red-600" id="emma-expenses"></span></li>
-                                <li class="flex justify-between items-center"><span class="font-medium">Savings Contribution:</span> <span class="font-semibold text-blue-600" id="emma-savings"></span></li>
-                                <li class="flex justify-between items-center border-t pt-2 mt-2"><span class="font-bold">Remaining Disposable:</span> <span class="font-bold text-slate-800" id="emma-disposable"></span></li>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
+                            <h3 class="text-xl font-bold text-center mb-4">Weekly Financial Position</h3>
+                            <ul class="space-y-2 text-sm">
+                                <li class="flex justify-between items-center"><span class="font-medium">Combined Net Pay:</span> <span class="font-semibold text-green-600" id="combined-net-pay"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Total Fixed Expenses:</span> <span class="font-semibold text-red-600" id="combined-fixed-expenses"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Total Variable Budget:</span> <span class="font-semibold text-orange-600" id="combined-variable-budget"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Total Actual Variable Spending:</span> <span class="font-semibold text-orange-700" id="combined-actual-variable-spending"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Total Savings Contribution:</span> <span class="font-semibold text-blue-600" id="combined-savings-contribution"></span></li>
+                                <li class="flex justify-between items-center border-t pt-2 mt-2"><span class="font-bold">Remaining Disposable:</span> <span class="font-bold text-slate-800" id="combined-disposable"></span></li>
                             </ul>
                         </div>
                     </div>
@@ -195,7 +188,7 @@
                 <section id="data-input" class="tab-pane hidden">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h2 class="text-2xl font-bold text-slate-900 mb-4">Update Your Financial Data</h2>
-                        <p class="text-slate-500 mb-6">Enter your latest income, expense, and savings information below. All values should be numerical (e.g., `3188`, `50`). Dates should be `YYYY-MM-DD`.</p>
+                        <!-- Removed introductory text as requested -->
 
                         <div class="grid md:grid-cols-2 gap-6 mb-6">
                             <div>
@@ -234,6 +227,16 @@
                             </div>
                         </div>
 
+                        <!-- Moved Variable Expenses above Fixed Expenses -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Variable Expenses (Weekly Budget)</h3>
+                            <div id="variable-expenses-inputs-container">
+                                </div>
+                            <button type="button" id="add-variable-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                                + Add Variable Expense
+                            </button>
+                        </div>
+
                         <div class="mb-6">
                             <h3 class="text-lg font-semibold text-slate-700 mb-3">Fixed Expenses</h3>
                             <div id="fixed-expenses-inputs-container">
@@ -241,15 +244,6 @@
                             </div>
                             <button type="button" id="add-fixed-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
                                 + Add Fixed Expense
-                            </button>
-                        </div>
-
-                        <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Variable Expenses (Weekly Budget)</h3>
-                            <div id="variable-expenses-inputs-container">
-                                </div>
-                            <button type="button" id="add-variable-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
-                                + Add Variable Expense
                             </button>
                         </div>
 
@@ -278,6 +272,41 @@
                                     <!-- Logged entries will appear here -->
                                 </ul>
                             </div>
+                        </div>
+                        <!-- End new section -->
+
+                        <!-- New section for logging actual weekly variable spending -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Log Actual Weekly Variable Spending</h3>
+                            <p class="text-sm text-slate-500 mb-4">Enter individual variable purchases made this week to track actual spending.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
+                                <div>
+                                    <label for="input-actual-variable-category" class="form-label text-sm">Category</label>
+                                    <input type="text" id="input-actual-variable-category" class="form-input text-sm" placeholder="e.g. Groceries">
+                                </div>
+                                <div>
+                                    <label for="input-actual-variable-amount" class="form-label text-sm">Amount</label>
+                                    <input type="number" id="input-actual-variable-amount" class="form-input text-sm" placeholder="e.g. 75">
+                                </div>
+                                <div>
+                                    <label for="input-actual-variable-date" class="form-label text-sm">Date (Optional)</label>
+                                    <input type="date" id="input-actual-variable-date" class="form-input text-sm">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" id="add-actual-variable-spending-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
+                                        Log Spending
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="actual-variable-spending-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
+                                <p class="text-center text-slate-400" id="no-actual-variable-spending-message">No actual variable spending logged yet this week.</p>
+                                <ul id="actual-variable-spending-list" class="space-y-1">
+                                    <!-- Logged entries will appear here -->
+                                </ul>
+                            </div>
+                            <button type="button" id="reset-variable-spending-button" class="mt-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                                Reset Weekly Variable Spending
+                            </button>
                         </div>
                         <!-- End new section -->
 
@@ -360,11 +389,12 @@
                     target: 30000,
                     weeklyContribution: 700,
                     actualSavingsLog: [] 
-                }
+                },
+                actualVariableSpendingLog: [] // New property to store actual variable spending entries
             };
 
 
-            let jordanBarChart, emmaBarChart, expensesBarChart, savingsLineChart; 
+            let combinedWeeklyChart, expensesBarChart, savingsLineChart; // Simplified chart variables
 
             function updateRowWeeklyDisplay(rowDiv) {
                 const amountInput = rowDiv.querySelector('.fixed-expense-amount');
@@ -377,11 +407,9 @@
                 weeklyDisplay.textContent = formatCurrency(weeklyValue);
             }
 
-            // Updated to include 'category' and 'provider'
             function createFixedExpenseRow(category = '', provider = '', amount = '', freq = 'Weekly') {
                 const container = document.getElementById('fixed-expenses-inputs-container');
                 const rowDiv = document.createElement('div');
-                // Adjusted grid-cols to 5 (Category, Provider, Amount, Frequency, Weekly Cost/Remove)
                 rowDiv.className = 'fixed-expense-row grid grid-cols-1 sm:grid-cols-5 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
 
                 rowDiv.innerHTML = `
@@ -433,7 +461,6 @@
                     }
                 } else {
                     fixedExpenses.forEach(expense => {
-                        // Pass category and provider
                         createFixedExpenseRow(expense.category, expense.provider, expense.amount, expense.freq);
                     });
                 }
@@ -509,6 +536,26 @@
                 }
             }
 
+            // New function to render actual variable spending log
+            function renderActualVariableSpendingLog() {
+                const list = document.getElementById('actual-variable-spending-list');
+                const noMessage = document.getElementById('no-actual-variable-spending-message');
+                list.innerHTML = ''; // Clear existing list items
+
+                if (!currentData.actualVariableSpendingLog || currentData.actualVariableSpendingLog.length === 0) {
+                    noMessage.classList.remove('hidden');
+                } else {
+                    noMessage.classList.add('hidden');
+                    // Sort descending by date for display (most recent first)
+                    const sortedLogs = [...currentData.actualVariableSpendingLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
+                    sortedLogs.forEach(entry => {
+                        const li = document.createElement('li');
+                        li.textContent = `${formatDate(new Date(entry.date))} - ${entry.category}: ${formatCurrency(entry.amount)}`;
+                        list.appendChild(li);
+                    });
+                }
+            }
+
 
             function parseInputData() {
                 const parsed = {};
@@ -532,18 +579,18 @@
 
                 parsed.fixedExpenses = [];
                 document.querySelectorAll('.fixed-expense-row').forEach(rowDiv => {
-                    const categoryInput = rowDiv.querySelector('.fixed-expense-category'); // New
-                    const providerInput = rowDiv.querySelector('.fixed-expense-provider'); // New
+                    const categoryInput = rowDiv.querySelector('.fixed-expense-category'); 
+                    const providerInput = rowDiv.querySelector('.fixed-expense-provider'); 
                     const amountInput = rowDiv.querySelector('.fixed-expense-amount');
                     const freqSelect = rowDiv.querySelector('.fixed-expense-freq');
 
-                    const category = categoryInput ? categoryInput.value.trim() : ''; // New
-                    const provider = providerInput ? providerInput.value.trim() : ''; // New
+                    const category = categoryInput ? categoryInput.value.trim() : ''; 
+                    const provider = providerInput ? providerInput.value.trim() : ''; 
                     const amount = amountInput ? parseFloat(amountInput.value) : NaN;
                     const freq = freqSelect ? freqSelect.value : 'Weekly';
 
-                    if (category && provider && !isNaN(amount) && amount >= 0) { // Check for category and provider
-                        parsed.fixedExpenses.push({ category, provider, amount, freq }); // Store new fields
+                    if (category && provider && !isNaN(amount) && amount >= 0) { 
+                        parsed.fixedExpenses.push({ category, provider, amount, freq }); 
                     } else if (category || provider || !isNaN(amount)) { 
                         console.warn('Skipping partially filled/invalid fixed expense row:', { category, provider, amount, freq });
                     }
@@ -564,7 +611,10 @@
                         console.warn('Skipping partially filled/invalid variable expense row:', { name, budget });
                     }
                 });
-                console.log('Parsed Variable Expenses:', parsed.variableExpenses);
+                console.log('Parsed Variable Expenses (Budget):', parsed.variableExpenses);
+
+                // Actual variable spending log is directly managed by its logging functions
+                parsed.actualVariableSpendingLog = currentData.actualVariableSpendingLog || [];
 
                 return parsed;
             }
@@ -574,50 +624,42 @@
                 currentData = dataToUse; 
 
                 const processed = {
-                    // Fixed expenses now have category and provider, but still map to weekly cost
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
                         category: e.category, 
                         provider: e.provider, 
                         weekly: getWeeklyAmount(e.amount, e.freq)
                     })),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
-                    get totalVariableWeekly() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); },
-                    get totalExpensesWeekly() { return this.totalFixedWeekly + this.totalVariableWeekly; },
+                    get totalVariableBudget() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); }, // Total from budget
+                    get totalActualVariableSpending() { return currentData.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0); }, // Total from actual log
+                    get totalExpensesWeekly() { return this.totalFixedWeekly + this.totalActualVariableSpending; }, // Use actual spending for total
                 };
                 console.log('Processed totals:', processed);
 
-                const emmaShare = currentData.income.combined > 0 ? currentData.income.emma / currentData.income.combined : 0.5;
-                const jordanShare = currentData.income.combined > 0 ? currentData.income.jordan / currentData.income.combined : 0.5;
-                
-                const emmaExpenses = processed.totalExpensesWeekly * emmaShare;
-                const jordanExpenses = processed.totalExpensesWeekly * jordanShare;
-
-                const emmaSavingsContribution = currentData.savingsGoal.weeklyContribution / 2;
-                const jordanSavingsContribution = currentData.savingsGoal.weeklyContribution / 2;
-
-                const emmaDisposable = currentData.income.emma - emmaExpenses - emmaSavingsContribution;
-                const jordanDisposable = currentData.income.jordan - jordanExpenses - jordanSavingsContribution;
-                console.log('Individual breakdowns:', { emmaExpenses, jordanExpenses, emmaSavingsContribution, jordanSavingsContribution, emmaDisposable, jordanDisposable });
-
+                // Update Key Metrics
                 document.getElementById('metric-income').textContent = formatCurrency(currentData.income.combined);
-                document.getElementById('metric-expenses').textContent = formatCurrency(processed.totalExpensesWeekly);
+                document.getElementById('metric-expenses').textContent = formatCurrency(processed.totalFixedWeekly + processed.totalActualVariableSpending); // Combined fixed and actual variable
                 document.getElementById('metric-savings').textContent = formatCurrency(currentData.savingsGoal.weeklyContribution);
-                document.getElementById('metric-net').textContent = formatCurrency(currentData.income.combined - processed.totalExpensesWeekly - currentData.savingsGoal.weeklyContribution);
+                document.getElementById('metric-net').textContent = formatCurrency(currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution);
                 console.log('Key Metrics Updated');
 
-                document.getElementById('jordan-pay').textContent = formatCurrency(currentData.income.jordan);
-                document.getElementById('jordan-expenses').textContent = formatCurrency(jordanExpenses);
-                document.getElementById('jordan-savings').textContent = formatCurrency(jordanSavingsContribution);
-                document.getElementById('jordan-disposable').textContent = formatCurrency(jordanDisposable);
+                // Update Combined Weekly Summary
+                document.getElementById('combined-net-pay').textContent = formatCurrency(currentData.income.combined);
+                document.getElementById('combined-fixed-expenses').textContent = formatCurrency(processed.totalFixedWeekly);
+                document.getElementById('combined-variable-budget').textContent = formatCurrency(processed.totalVariableBudget);
+                document.getElementById('combined-actual-variable-spending').textContent = formatCurrency(processed.totalActualVariableSpending);
+                document.getElementById('combined-savings-contribution').textContent = formatCurrency(currentData.savingsGoal.weeklyContribution);
+                
+                const combinedDisposable = currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution;
+                document.getElementById('combined-disposable').textContent = formatCurrency(combinedDisposable);
 
-                document.getElementById('emma-pay').textContent = formatCurrency(currentData.income.emma);
-                document.getElementById('emma-expenses').textContent = formatCurrency(emmaExpenses);
-                document.getElementById('emma-savings').textContent = formatCurrency(emmaSavingsContribution);
-                document.getElementById('emma-disposable').textContent = formatCurrency(emmaDisposable);
-
-                updateIndividualSummaryBarChart('jordanChart', ['Expenses', 'Savings', 'Disposable'], [jordanExpenses, jordanSavingsContribution, Math.max(0, jordanDisposable)]);
-                updateIndividualSummaryBarChart('emmaChart', ['Expenses', 'Savings', 'Disposable'], [emmaExpenses, emmaSavingsContribution, Math.max(0, emmaDisposable)]);
-                console.log('Weekly Breakdown Charts Updated');
+                // Update Combined Weekly Chart
+                updateCombinedWeeklySummaryBarChart('combinedWeeklyChart', 
+                    ['Net Pay', 'Fixed Expenses', 'Actual Variable Spending', 'Savings', 'Disposable'],
+                    [currentData.income.combined, processed.totalFixedWeekly, processed.totalActualVariableSpending, currentData.savingsGoal.weeklyContribution, Math.max(0, combinedDisposable)],
+                    ['#22c55e', '#ef4444', '#f97316', '#3b82f6', '#64748b'] // green, red, orange, blue, slate
+                );
+                console.log('Combined Weekly Breakdown Chart Updated');
 
                 const tableBody = document.getElementById('fixed-expenses-table');
                 tableBody.innerHTML = '';
@@ -635,12 +677,12 @@
                     });
                 console.log('Fixed Expenses Table Updated');
 
-                // Expense categories for chart should now use 'category' from fixed expenses
                 const allExpenseCategories = [
-                    ...processed.fixedExpensesWeekly.map(e => ({ name: e.category, weekly: e.weekly })), // Use category
-                    ...currentData.variableExpenses.map(v => ({ name: v.name, weekly: v.budget }))
+                    ...processed.fixedExpensesWeekly.map(e => ({ name: e.category, weekly: e.weekly })), 
+                    // For the expenses deep dive, we might want to show actuals if available, or budgets
+                    // For simplicity, sticking to budgeted variable for this chart (top spending categories)
+                    ...currentData.variableExpenses.map(v => ({ name: v.name, weekly: v.budget })) 
                 ];
-                // Aggregate weekly costs by category for the bar chart
                 const aggregatedCategories = allExpenseCategories.reduce((acc, item) => {
                     acc[item.name] = (acc[item.name] || 0) + item.weekly;
                     return acc;
@@ -650,7 +692,7 @@
                     .map(([name, weekly]) => ({ name, weekly }))
                     .filter(e => e.weekly && e.weekly > 0)
                     .sort((a, b) => b.weekly - a.weekly)
-                    .slice(0, 7); // Still show top 7 categories
+                    .slice(0, 7); 
 
                 console.log('Expense Categories for Bar Chart:', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
                 updateBarChart('expensesBarChart', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
@@ -720,8 +762,9 @@
                 maintainAspectRatio: false,
             };
 
-            function updateIndividualSummaryBarChart(canvasId, labels, data) {
-                console.log('Attempting to update individual summary bar chart:', canvasId);
+            // Renamed and adjusted function for the new combined weekly summary bar chart
+            function updateCombinedWeeklySummaryBarChart(canvasId, labels, data, colors) {
+                console.log('Attempting to update combined weekly summary bar chart:', canvasId);
                 const ctx = document.getElementById(canvasId).getContext('2d');
                 if (!ctx) {
                     console.error('Canvas context not found for:', canvasId);
@@ -732,24 +775,20 @@
                     return;
                 }
 
-                let chartInstance;
-                if (canvasId === 'jordanChart') chartInstance = jordanBarChart; 
-                if (canvasId === 'emmaChart') chartInstance = emmaBarChart;     
-
-                if (chartInstance) {
-                    console.log('Destroying existing individual summary bar chart instance:', canvasId);
-                    chartInstance.destroy();
+                if (combinedWeeklyChart) { // Use the single chart variable
+                    console.log('Destroying existing combined weekly summary bar chart instance:', canvasId);
+                    combinedWeeklyChart.destroy();
                 }
 
                 try {
-                    const newChart = new Chart(ctx, {
+                    combinedWeeklyChart = new Chart(ctx, { // Assign to the single chart variable
                         type: 'bar', 
                         data: {
                             labels: labels,
                             datasets: [{
                                 label: 'Amount',
                                 data: data,
-                                backgroundColor: ['#ef4444', '#3b82f6', '#64748b'], 
+                                backgroundColor: colors, 
                                 borderRadius: 4,
                             }]
                         },
@@ -771,11 +810,9 @@
                             }
                         }
                     });
-                    if (canvasId === 'jordanChart') jordanBarChart = newChart;
-                    if (canvasId === 'emmaChart') emmaBarChart = newChart;
-                    console.log('Individual summary bar chart updated/created:', canvasId, newChart);
+                    console.log('Combined weekly summary bar chart updated/created:', canvasId, combinedWeeklyChart);
                 } catch (error) {
-                    console.error('Error creating/updating individual summary bar chart:', canvasId, error);
+                    console.error('Error creating/updating combined weekly summary bar chart:', canvasId, error);
                 }
             }
             
@@ -934,23 +971,52 @@
                 const date = actualDateInput.value || new Date().toISOString().split('T')[0]; // Default to today if not set
 
                 if (!isNaN(amount) && amount > 0) {
-                    // Add to log
                     currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
-                    // Sort log ascending by date (older to newer) for processing
                     currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    currentData.savingsGoal.current = defaultData.savingsGoal.current + currentData.savingsGoal.actualSavingsLog.reduce((sum, e) => sum + e.amount, 0); // Re-sum to avoid compounding errors if defaultData.savingsGoal.current isn't base.
 
-                    // Update the 'current' savings directly in the data model
-                    currentData.savingsGoal.current = (currentData.savingsGoal.current || defaultData.savingsGoal.current) + amount; // Add to current base or existing total
-
-                    // Clear the actual saving inputs
                     actualAmountInput.value = '';
                     actualDateInput.value = '';
 
-                    // Re-render everything to show the updated progress
                     processAndRenderData(currentData);
-                    renderActualSavingsLog(); // Update the log display immediately
+                    renderActualSavingsLog(); 
                 } else {
                     console.warn('Invalid actual saving amount entered. Please enter a positive number.');
+                }
+            });
+
+            // New: Add listener for logging actual variable spending
+            document.getElementById('add-actual-variable-spending-button').addEventListener('click', () => {
+                const categoryInput = document.getElementById('input-actual-variable-category');
+                const amountInput = document.getElementById('input-actual-variable-amount');
+                const dateInput = document.getElementById('input-actual-variable-date');
+
+                const category = categoryInput.value.trim();
+                const amount = parseFloat(amountInput.value);
+                const date = dateInput.value || new Date().toISOString().split('T')[0];
+
+                if (category && !isNaN(amount) && amount > 0) {
+                    currentData.actualVariableSpendingLog.push({ category: category, amount: amount, date: date });
+                    currentData.actualVariableSpendingLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    categoryInput.value = '';
+                    amountInput.value = '';
+                    dateInput.value = '';
+
+                    processAndRenderData(currentData);
+                    renderActualVariableSpendingLog();
+                } else {
+                    console.warn('Invalid actual variable spending entry. Please fill in category and a positive amount.');
+                }
+            });
+
+            // New: Add listener for resetting actual variable spending
+            document.getElementById('reset-variable-spending-button').addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset all logged actual variable spending for the week? This action cannot be undone.')) {
+                    currentData.actualVariableSpendingLog = [];
+                    processAndRenderData(currentData);
+                    renderActualVariableSpendingLog();
+                    console.log('Actual variable spending log reset.');
                 }
             });
 
@@ -973,6 +1039,7 @@
             updateCombinedIncomeInput(); 
             processAndRenderData(defaultData);
             renderActualSavingsLog(); 
+            renderActualVariableSpendingLog(); // Initial render for new log
         });
     </script>
 </body>
