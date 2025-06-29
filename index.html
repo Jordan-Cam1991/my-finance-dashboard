@@ -510,15 +510,15 @@
             let combinedWeeklyChart, expensesBarChart, savingsLineChart; 
 
             async function saveData(data) {
-                if (!db || !userId) {
-                    console.error("Firestore not initialized or user not authenticated. Cannot save data.");
+                if (!db) { // No need to check userId for shared data
+                    console.error("Firestore not initialized. Cannot save data.");
                     return;
                 }
                 try {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
-                    // Ensure data is plain object for Firestore and logs are valid
+                    // Changed to a fixed, shared document path
+                    const docRef = doc(db, 'artifacts', appId, 'sharedData', 'financialDashboard'); 
                     const dataToSave = JSON.parse(JSON.stringify(data)); 
-                    console.log("Saving data to Firestore. Current savings:", dataToSave.savingsGoal.current); // Log before saving
+                    console.log("Saving data to Firestore. Current savings:", dataToSave.savingsGoal.current);
                     await setDoc(docRef, dataToSave);
                     console.log("Data successfully saved to Firestore!");
                 } catch (error) {
@@ -1197,18 +1197,19 @@
                     analytics = getAnalytics(app); 
                     console.log("Firebase services (Firestore, Auth, Analytics) obtained.");
 
-                    console.log("Attempting anonymous sign-in...");
+                    console.log("Attempting anonymous sign-in (needed for authentication context even with shared data path)...");
                     const userCredential = await signInAnonymously(auth);
-                    userId = userCredential.user.uid;
-                    console.log('Firebase initialized. User ID:', userId);
+                    userId = userCredential.user.uid; // userId is still obtained but not used in doc path
+                    console.log('Anonymous user signed in. User ID:', userId);
 
                     // Attach event listeners ONLY after Firebase is ready
                     attachFirebaseDependentEventListeners();
 
-                    console.log(`Setting up Firestore onSnapshot listener for path: artifacts/${appId}/users/${userId}/financialData/current`);
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
+                    // Changed to a fixed, shared document path for all users/devices
+                    console.log(`Setting up Firestore onSnapshot listener for SHARED path: artifacts/${appId}/sharedData/financialDashboard`);
+                    const docRef = doc(db, 'artifacts', appId, 'sharedData', 'financialDashboard');
                     onSnapshot(docRef, (docSnap) => {
-                        console.log("Firestore onSnapshot callback triggered.");
+                        console.log("Firestore onSnapshot callback triggered for shared data.");
                         
                         if (docSnap.exists()) {
                             let loadedData = docSnap.data();
@@ -1238,17 +1239,17 @@
                             populateInputsAndRender(loadedData);
                             loadingOverlay.style.display = 'none'; // Hide loading indicator ONLY AFTER successful data processing
                         } else {
-                            console.log("No financial data found in Firestore for this user/app, initializing with default data and saving.");
+                            console.log("No financial data found in Firestore for the shared document, initializing with default data and saving.");
                             currentData = defaultData;
                             populateInputsAndRender(currentData);
                             saveData(currentData); // Save default data to Firestore for next time
                             loadingOverlay.style.display = 'none'; // Hide loading indicator
                         }
                     }, (error) => {
-                        console.error("Firestore onSnapshot listener error:", error);
+                        console.error("Firestore onSnapshot listener error (for shared data):", error);
                         loadingOverlay.style.display = 'none'; // Hide on error too
                         if (error.code === 'permission-denied') {
-                            console.error("PERMISSION DENIED: Please check your Firestore Security Rules in Firebase Console. Ensure 'allow read, write: if request.auth != null && request.auth.uid == userId;' is correctly set for your data path.");
+                            console.error("PERMISSION DENIED: Please check your Firestore Security Rules in Firebase Console. Ensure 'allow read, write: if request.auth != null;' is correctly set for the shared data path /artifacts/my-finance-dashboard/sharedData/financialDashboard.");
                         }
                         // Fallback to default data if there's a Firestore error
                         currentData = defaultData;
