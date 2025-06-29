@@ -716,6 +716,7 @@
             }
 
             function processAndRenderData(dataToUse) {
+                console.log("Starting processAndRenderData...");
                 currentData = dataToUse; 
 
                 // Directly use currentData.savingsGoal.current for the input field
@@ -832,6 +833,7 @@
                 }
 
                 updateLineChart('savingsLineChart', projectionLabels, projectionData);
+                console.log("Finished processAndRenderData.");
             }
 
             const chartDefaults = {
@@ -1142,7 +1144,7 @@
 
             // Function to populate inputs and render dashboard from loaded data
             function populateInputsAndRender(data) {
-                console.log("Populating inputs and rendering dashboard with data:", data);
+                console.log("Starting populateInputsAndRender with data:", data);
                 // Populate income inputs
                 document.getElementById('input-emma-income').value = data.income.emma;
                 document.getElementById('input-jordan-income').value = data.income.jordan;
@@ -1162,7 +1164,7 @@
                 renderActualSavingsLog();
                 renderActualSavingsUsedLog();
                 renderActualVariableSpendingLog();
-                console.log("Dashboard rendering complete.");
+                console.log("Finished populateInputsAndRender. Dashboard rendering complete.");
             }
 
             // Attach tab switching event listeners immediately on DOMContentLoaded
@@ -1207,8 +1209,7 @@
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
                     onSnapshot(docRef, (docSnap) => {
                         console.log("Firestore onSnapshot callback triggered.");
-                        loadingOverlay.style.display = 'none'; // Hide loading indicator
-
+                        
                         if (docSnap.exists()) {
                             let loadedData = docSnap.data();
                             console.log("Data loaded from Firestore:", loadedData); 
@@ -1232,14 +1233,16 @@
 
                             loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
                             
-                            console.log("Current savings after data loading:", loadedData.savingsGoal.current);
+                            console.log("Current savings after data loading (from onSnapshot):", loadedData.savingsGoal.current);
                             // Use the loaded data to populate and render
                             populateInputsAndRender(loadedData);
+                            loadingOverlay.style.display = 'none'; // Hide loading indicator ONLY AFTER successful data processing
                         } else {
-                            console.log("No financial data found in Firestore, initializing with default data and saving.");
+                            console.log("No financial data found in Firestore for this user/app, initializing with default data and saving.");
                             currentData = defaultData;
                             populateInputsAndRender(currentData);
                             saveData(currentData); // Save default data to Firestore for next time
+                            loadingOverlay.style.display = 'none'; // Hide loading indicator
                         }
                     }, (error) => {
                         console.error("Firestore onSnapshot listener error:", error);
