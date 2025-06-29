@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -173,8 +173,8 @@
                                 <div id="progress-bar" class="bg-indigo-600 h-6 rounded-full text-center text-white text-sm flex items-center justify-center font-semibold" style="width: 0%;">0%</div>
                             </div>
                             <ul class="mt-4 space-y-2 text-sm">
-                                <li class="flex justify-between"><span class="font-medium text-slate-600">Amount Saved:</span> <span id="savings-current" class="font-bold"></span></li>
-                                <li class="flex justify-between"><span class="font-medium text-slate-600">Target:</span> <span id="savings-target" class="font-bold"></span></li>
+                                <li class="flex justify-between"><span class="font-medium text-slate-600">Amount Saved:</span> <span id="savings-current-display" class="font-bold"></span></li>
+                                <li class="flex justify-between"><span class="font-medium text-slate-600">Target:</span> <span id="savings-target-display" class="font-bold"></span></li>
                                 <li class="flex justify-between"><span class="font-medium text-slate-600">Amount Remaining:</span> <span id="savings-remaining" class="font-bold text-indigo-700"></span></li>
                                 <li class="flex justify-between border-t mt-2 pt-2"><span class="font-medium text-slate-600">Est. Completion Date:</span> <span id="savings-eta" class="font-bold"></span></li>
                             </ul>
@@ -210,10 +210,7 @@
                                     <input type="number" id="input-jordan-income" class="form-input" value="1797">
                                 </div>
                             </div>
-                            <!-- Savings Goal inputs moved below Log Actual Weekly Savings -->
-                            <div id="savings-goal-input-section">
-                                <!-- This section will be moved by JS on load or dynamically -->
-                            </div>
+                            <!-- Savings Goal inputs are now a direct child of the data-input section div below -->
                         </div>
 
                         <!-- Moved Log Actual Weekly Variable Spending to top -->
@@ -250,10 +247,29 @@
                             </button>
                         </div>
                         <!-- End new section -->
-
-                        <!-- Log Actual Weekly Savings moved here -->
+                        
+                        <!-- Savings Goal (30k Goal) moved here from above, and internal elements reordered -->
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Log Actual Weekly Savings</h3>
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Savings Goal (30k Goal)</h3>
+                            <div class="mb-4">
+                                <label for="input-savings-current" class="form-label">Current Savings</label>
+                                <input type="number" id="input-savings-current" class="form-input" value="21900" readonly> <!-- Added readonly -->
+                            </div>
+                            <div class="mb-4">
+                                <label for="input-savings-target" class="form-label">Target Savings</label>
+                                <input type="number" id="input-savings-target" class="form-input" value="30000">
+                            </div>
+                            <div class="mb-4">
+                                <label for="input-weekly-contribution" class="form-label">Weekly Contribution</label>
+                                <input type="number" id="input-weekly-contribution" class="form-input" value="700">
+                            </div>
+                            <div class="mb-0">
+                                <label for="input-savings-start-date" class="form-label">Start Date (YYYY-MM-DD)</label>
+                                <input type="date" id="input-savings-start-date" class="form-input"> 
+                            </div>
+
+                            <!-- Log Actual Weekly Savings moved above Log Savings Used -->
+                            <h4 class="text-md font-semibold text-slate-700 mt-6 mb-3">Log Actual Weekly Savings</h4>
                             <p class="text-sm text-slate-500 mb-4">Add the amount you actually saved this week to update your total progress.</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
                                 <div>
@@ -276,30 +292,8 @@
                                     <!-- Logged entries will appear here -->
                                 </ul>
                             </div>
-                        </div>
-                        <!-- End moved section -->
 
-                        <!-- Savings Goal (30k Goal) moved here from above -->
-                        <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Savings Goal (30k Goal)</h3>
-                            <div class="mb-4">
-                                <label for="input-savings-current" class="form-label">Current Savings</label>
-                                <input type="number" id="input-savings-current" class="form-input" value="21900">
-                            </div>
-                            <div class="mb-4">
-                                <label for="input-savings-target" class="form-label">Target Savings</label>
-                                <input type="number" id="input-savings-target" class="form-input" value="30000">
-                            </div>
-                            <div class="mb-4">
-                                <label for="input-weekly-contribution" class="form-label">Weekly Contribution</label>
-                                <input type="number" id="input-weekly-contribution" class="form-input" value="700">
-                            </div>
-                            <div class="mb-0">
-                                <label for="input-savings-start-date" class="form-label">Start Date (YYYY-MM-DD)</label>
-                                <input type="date" id="input-savings-start-date" class="form-input"> 
-                            </div>
-
-                            <!-- New: Log Savings Used -->
+                            <!-- Log Savings Used -->
                             <h4 class="text-md font-semibold text-slate-700 mt-6 mb-3">Log Savings Used</h4>
                             <p class="text-sm text-slate-500 mb-4">Record instances where savings were withdrawn or used for specific purposes.</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
@@ -415,11 +409,12 @@
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900, 
+                    current: 21900, // This will now be dynamically calculated
+                    initialCurrent: 21900, // Store initial value for recalculations
                     target: 30000,
                     weeklyContribution: 700,
                     actualSavingsLog: [],
-                    actualSavingsUsedLog: [] // New log for used savings
+                    actualSavingsUsedLog: [] 
                 },
                 actualVariableSpendingLog: [] 
             };
@@ -504,7 +499,8 @@
             }
 
             function populateSavingsGoalInputs(savingsGoal) {
-                document.getElementById('input-savings-current').value = savingsGoal.current;
+                // The 'current' field is now read-only and updated by JS
+                document.getElementById('input-savings-current').value = savingsGoal.current; 
                 document.getElementById('input-savings-target').value = savingsGoal.target;
                 document.getElementById('input-weekly-contribution').value = savingsGoal.weeklyContribution;
                 document.getElementById('input-savings-start-date').value = savingsGoal.startDate || new Date().toISOString().split('T')[0];
@@ -549,11 +545,11 @@
 
             function renderActualVariableSpendingLog() {
                 const dataInputList = document.getElementById('actual-variable-spending-list');
-                const weeklyBreakdownList = document.getElementById('weekly-actual-variable-spending-list'); // New
+                const weeklyBreakdownList = document.getElementById('weekly-actual-variable-spending-list'); 
                 const noMessageDataInput = document.getElementById('no-actual-variable-spending-message');
                 
                 dataInputList.innerHTML = ''; 
-                weeklyBreakdownList.innerHTML = ''; // Clear both lists
+                weeklyBreakdownList.innerHTML = ''; 
 
                 if (!currentData.actualVariableSpendingLog || currentData.actualVariableSpendingLog.length === 0) {
                     noMessageDataInput.classList.remove('hidden');
@@ -582,10 +578,10 @@
                 };
                 parsed.income.combined = parsed.income.emma + parsed.income.jordan;
 
+                // For savingsGoal, 'current' will be calculated, not directly parsed from input
                 parsed.savingsGoal = {
                     name: 'Custom Goal', 
                     startDate: document.getElementById('input-savings-start-date').value || new Date().toISOString().split('T')[0],
-                    current: parseFloat(document.getElementById('input-savings-current').value) || 0,
                     target: parseFloat(document.getElementById('input-savings-target').value) || 0,
                     weeklyContribution: parseFloat(document.getElementById('input-weekly-contribution').value) || 0,
                     actualSavingsLog: currentData.savingsGoal.actualSavingsLog || [],
@@ -611,10 +607,7 @@
                     }
                 });
 
-                // Variable expenses budget list is now static from defaultData
                 parsed.variableExpenses = defaultData.variableExpenses; 
-
-                // Actual variable spending log is directly managed by its logging functions
                 parsed.actualVariableSpendingLog = currentData.actualVariableSpendingLog || [];
 
                 return parsed;
@@ -622,6 +615,12 @@
 
             function processAndRenderData(dataToUse) {
                 currentData = dataToUse; 
+
+                // Recalculate current savings based on initial and logs
+                const loggedSavingsSum = currentData.savingsGoal.actualSavingsLog.reduce((sum, e) => sum + e.amount, 0);
+                const usedSavingsSum = currentData.savingsGoal.actualSavingsUsedLog.reduce((sum, e) => sum + e.amount, 0);
+                currentData.savingsGoal.current = defaultData.savingsGoal.initialCurrent + loggedSavingsSum - usedSavingsSum;
+                document.getElementById('input-savings-current').value = currentData.savingsGoal.current; // Update the readonly input
 
                 const processed = {
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
@@ -691,6 +690,9 @@
                 updateBarChart('expensesBarChart', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
 
                 const { current, target, weeklyContribution, startDate } = currentData.savingsGoal;
+                document.getElementById('savings-current-display').textContent = formatCurrency(current); // Update savings current display
+                document.getElementById('savings-target-display').textContent = formatCurrency(target); // Update savings target display
+
                 const progress = target > 0 ? (current / target) * 100 : 0;
                 const remaining = Math.max(0, target - current);
                 const weeksNeeded = weeklyContribution > 0 ? remaining / weeklyContribution : (remaining > 0 ? Infinity : 0);
@@ -704,8 +706,6 @@
 
                 document.getElementById('progress-bar').style.width = `${Math.min(100, Math.round(progress))}%`;
                 document.getElementById('progress-bar').textContent = `${Math.round(progress)}%`;
-                document.getElementById('savings-current').textContent = formatCurrency(current);
-                document.getElementById('savings-target').textContent = formatCurrency(target);
                 document.getElementById('savings-remaining').textContent = formatCurrency(remaining);
                 document.getElementById('savings-eta').textContent = isFinite(weeksNeeded) ? formatDate(eta) : 'N/A (Adjust Contribution)';
                 
@@ -949,7 +949,8 @@
                 if (!isNaN(amount) && amount > 0) {
                     currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
                     currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    currentData.savingsGoal.current += amount; // Directly update the running total
+                    // The 'current' property is now updated by processAndRenderData based on all logs
+                    // currentData.savingsGoal.current += amount; 
 
                     actualAmountInput.value = '';
                     actualDateInput.value = '';
@@ -994,7 +995,6 @@
                 }
             });
 
-            // New: Add listener for logging savings used
             document.getElementById('add-savings-used-button').addEventListener('click', () => {
                 const amountInput = document.getElementById('input-savings-used-amount');
                 const reasonInput = document.getElementById('input-savings-used-reason');
@@ -1007,7 +1007,8 @@
                 if (!isNaN(amount) && amount > 0 && reason) {
                     currentData.savingsGoal.actualSavingsUsedLog.push({ date: date, amount: amount, reason: reason });
                     currentData.savingsGoal.actualSavingsUsedLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    currentData.savingsGoal.current -= amount; // Deduct from running total
+                    // The 'current' property is now updated by processAndRenderData based on all logs
+                    // currentData.savingsGoal.current -= amount; 
 
                     amountInput.value = '';
                     reasonInput.value = '';
@@ -1031,45 +1032,40 @@
                 processAndRenderData(newData);
             });
 
-            // Function to dynamically move the Savings Goal input section
-            function moveSavingsGoalSection() {
-                const savingsGoalDiv = document.querySelector('#data-input > div > div:nth-child(2)'); // Selects the 2nd child div of the grid in data-input
-                const targetLocation = document.getElementById('savings-goal-input-section');
-                if (savingsGoalDiv && targetLocation) {
-                    // Create a placeholder div to put the income inputs back into, so income is not also moved.
-                    // This approach is more robust than trying to select the exact elements.
-                    const incomeSectionContainer = savingsGoalDiv.parentNode; // This is the grid
-                    const incomeDiv = incomeSectionContainer.querySelector('div:first-child'); // First child is income
+            // This function is no longer needed as the HTML structure is adjusted directly.
+            // function moveSavingsGoalSection() {
+            //     const savingsGoalDiv = document.querySelector('#data-input > div > div:nth-child(2)'); 
+            //     const targetLocation = document.getElementById('savings-goal-input-section');
+            //     if (savingsGoalDiv && targetLocation) {
+            //         const incomeSectionContainer = savingsGoalDiv.parentNode; 
+            //         const incomeDiv = incomeSectionContainer.querySelector('div:first-child'); 
 
-                    // Move income out temporarily to be placed back correctly
-                    const tempIncomePlaceholder = document.createElement('div');
-                    incomeSectionContainer.insertBefore(tempIncomePlaceholder, incomeDiv);
-                    incomeSectionContainer.removeChild(incomeDiv);
+            //         const tempIncomePlaceholder = document.createElement('div');
+            //         incomeSectionContainer.insertBefore(tempIncomePlaceholder, incomeDiv);
+            //         incomeSectionContainer.removeChild(incomeDiv);
 
-                    // Now move the savings goal div to its new location
-                    targetLocation.parentNode.insertBefore(savingsGoalDiv, targetLocation.nextSibling); // Insert after targetLocation
+            //         targetLocation.parentNode.insertBefore(savingsGoalDiv, targetLocation.nextSibling); 
 
-                    // Put income back
-                    incomeSectionContainer.insertBefore(incomeDiv, tempIncomePlaceholder);
-                    incomeSectionContainer.removeChild(tempIncomePlaceholder);
-                } else {
-                    console.warn('Could not find savings goal section or target location for moving.');
-                }
-            }
+            //         incomeSectionContainer.insertBefore(incomeDiv, tempIncomePlaceholder);
+            //         incomeSectionContainer.removeChild(tempIncomePlaceholder);
+            //     } else {
+            //         console.warn('Could not find savings goal section or target location for moving.');
+            //     }
+            // }
 
 
             // Initial render: Populate input fields and then process/render dashboard
             populateFixedExpensesInputs(defaultData.fixedExpenses); 
-            populateSavingsGoalInputs(defaultData.savingsGoal); 
+            // Don't call populateSavingsGoalInputs here, as its 'current' value is calculated by processAndRenderData
+            // populateSavingsGoalInputs(defaultData.savingsGoal); 
             
             updateCombinedIncomeInput(); 
-            processAndRenderData(defaultData);
+            processAndRenderData(defaultData); // This call will now also set currentData.savingsGoal.current and update the input
             renderActualSavingsLog(); 
-            renderActualSavingsUsedLog(); // Render used savings log
+            renderActualSavingsUsedLog(); 
             renderActualVariableSpendingLog(); 
 
-            // Move the savings goal section after initial render
-            moveSavingsGoalSection(); 
+            // moveSavingsGoalSection(); // This is no longer needed
         });
     </script>
 </body>
