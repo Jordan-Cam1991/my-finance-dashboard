@@ -120,7 +120,11 @@
                                 <li class="flex justify-between items-center"><span class="font-medium">Combined Net Pay:</span> <span class="font-semibold text-green-600" id="combined-net-pay"></span></li>
                                 <li class="flex justify-between items-center"><span class="font-medium">Total Fixed Expenses:</span> <span class="font-semibold text-red-600" id="combined-fixed-expenses"></span></li>
                                 <li class="flex justify-between items-center"><span class="font-medium">Total Variable Budget:</span> <span class="font-semibold text-orange-600" id="combined-variable-budget"></span></li>
-                                <li class="flex justify-between items-center"><span class="font-medium">Total Actual Variable Spending:</span> <span class="font-semibold text-orange-700" id="combined-actual-variable-spending"></span>
+                                <li class="flex flex-col"> <!-- Changed to flex-col to stack items -->
+                                    <div class="flex justify-between items-center"> <!-- This div keeps the label and total aligned -->
+                                        <span class="font-medium">Total Actual Variable Spending:</span> 
+                                        <span class="font-semibold text-orange-700" id="combined-actual-variable-spending"></span>
+                                    </div>
                                     <ul id="weekly-actual-variable-spending-list" class="ml-4 text-xs text-slate-500 list-disc list-inside mt-1 space-y-0.5">
                                         <!-- Actual variable spending items will be listed here -->
                                     </ul>
