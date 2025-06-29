@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Financial Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Slate, Zinc, Stone) -->
+    <!-- Application Structure Plan: A single-page dashboard design is used to provide a centralized and immediate overview of all key financial data. The structure prioritizes usability through: 1) Top-level Key Metrics for a quick health check. 2) A Tabbed Interface to segment detailed information (Weekly Breakdown, Expenses, Savings Goals, Data Input) without overwhelming the user. This prevents a long, confusing page scroll. The flow encourages starting with a high-level summary, then drilling down into specific areas of interest (e.g., "How is my spending allocated?" or "How is our savings goal progressing?"), and now includes a dedicated tab for easy data input and manipulation, which is a more intuitive user journey than a linear report. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (Cards): Goal: Inform. Method: Large text in HTML cards. Justification: Provides immediate, high-impact visibility of the most critical numbers.
+        - Weekly Breakdown (Donut Charts): Goal: Compare. Method: Chart.js Donut. Justification: Effectively shows the proportion of each person's income allocated to expenses, savings, and disposable income.
+        - Expenses Deep Dive (Bar Chart & Table): Goal: Analyze/Compare. Method: Chart.js Horizontal Bar Chart & HTML Table. Justification: The bar chart is superior to a pie chart for comparing the magnitude of different expense categories. The interactive table allows for detailed inspection and sorting of all fixed costs.
+        - Savings Goal (Progress Bar & Line Chart): Goal: Track Change/Progress. Method: HTML/CSS Progress Bar & Chart.js Line Chart. Justification: The progress bar offers a simple, visual cue of completion. The line chart effectively illustrates the projected growth of savings over time, which is highly motivating.
+        - Data Input (Form/Textareas): Goal: Manipulate/Update Data. Method: HTML input fields and textareas with JS parsing. Justification: Provides a user-friendly interface for updating the underlying data without needing to edit code, enhancing interactivity and usability for ongoing financial tracking.
+        - Library/Method: Chart.js for all charts due to its simplicity, responsiveness, and canvas-based rendering.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 350px;
+            }
+        }
+        .tab-active {
+            border-color: #4f46e5; /* indigo-600 */
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            color: #475569; /* slate-600 */
+        }
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            border-radius: 0.375rem;
+            background-color: #ffffff;
+            color: #1e293b; /* slate-900 */
+            font-size: 0.875rem;
+        }
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Our Financial Dashboard</h1>
+            <p class="text-slate-500 mt-2">A clear view of our income, expenses, and savings goals.</p>
+        </header>
+
+        <main>
+            <!-- Key Metrics -->
+            <section id="key-metrics" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <h3 class="text-sm md:text-base font-medium text-slate-500">Combined Weekly Income</h3>
+                    <p class="text-2xl md:text-3xl font-bold text-green-600 mt-1" id="metric-income">$0.00</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <h3 class="text-sm md:text-base font-medium text-slate-500">Total Weekly Expenses</h3>
+                    <p class="text-2xl md:text-3xl font-bold text-red-600 mt-1" id="metric-expenses">$0.00</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <h3 class="text-sm md:text-base font-medium text-slate-500">Weekly Savings Goal</h3>
+                    <p class="text-2xl md:text-3xl font-bold text-blue-600 mt-1" id="metric-savings">$0.00</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <h3 class="text-sm md:text-base font-medium text-slate-500">Net Weekly Position</h3>
+                    <p class="text-2xl md:text-3xl font-bold text-slate-700 mt-1" id="metric-net">$0.00</p>
+                </div>
+            </section>
+
+            <nav class="flex border-b border-slate-200 mb-6 overflow-x-auto">
+                <button data-tab="weekly" class="tab-button py-3 px-4 md:px-6 border-b-2 tab-active whitespace-nowrap">Weekly Breakdown</button>
+                <button data-tab="expenses" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Expenses Deep Dive</button>
+                <button data-tab="savings" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Savings Goals</button>
+                <button data-tab="data-input" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Data Input</button>
+            </nav>
+
+            <div id="tab-content">
+                
+                <section id="weekly" class="tab-pane">
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-900">Individual Weekly Summary</h2>
+                        <p class="text-slate-500 mt-1">An overview of how each person's income is allocated per week.</p>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="text-xl font-bold text-center">Jordan's Week</h3>
+                            <div class="chart-container mx-auto mt-4 max-w-sm">
+                                <canvas id="jordanChart"></canvas>
+                            </div>
+                            <ul class="mt-4 space-y-2 text-sm">
+                                <li class="flex justify-between items-center"><span class="font-medium">Net Pay:</span> <span class="font-semibold text-green-600" id="jordan-pay"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Est. Expenses:</span> <span class="font-semibold text-red-600" id="jordan-expenses"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Savings Contribution:</span> <span class="font-semibold text-blue-600" id="jordan-savings"></span></li>
+                                <li class="flex justify-between items-center border-t pt-2 mt-2"><span class="font-bold">Remaining Disposable:</span> <span class="font-bold text-slate-800" id="jordan-disposable"></span></li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="text-xl font-bold text-center">Emma's Week</h3>
+                            <div class="chart-container mx-auto mt-4 max-w-sm">
+                                <canvas id="emmaChart"></canvas>
+                            </div>
+                            <ul class="mt-4 space-y-2 text-sm">
+                                <li class="flex justify-between items-center"><span class="font-medium">Net Pay:</span> <span class="font-semibold text-green-600" id="emma-pay"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Est. Expenses:</span> <span class="font-semibold text-red-600" id="emma-expenses"></span></li>
+                                <li class="flex justify-between items-center"><span class="font-medium">Savings Contribution:</span> <span class="font-semibold text-blue-600" id="emma-savings"></span></li>
+                                <li class="flex justify-between items-center border-t pt-2 mt-2"><span class="font-bold">Remaining Disposable:</span> <span class="font-bold text-slate-800" id="emma-disposable"></span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="expenses" class="tab-pane hidden">
+                    <div class="grid lg:grid-cols-5 gap-6">
+                        <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                             <h2 class="text-2xl font-bold text-slate-900 mb-1">Fixed Expenses Breakdown</h2>
+                             <p class="text-slate-500 mb-4 text-sm">All recurring bills converted to their weekly equivalent for easy comparison.</p>
+                             <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-slate-100 text-slate-600">
+                                        <tr>
+                                            <th class="p-3 font-semibold">Expense</th>
+                                            <th class="p-3 font-semibold text-right">Weekly Cost</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fixed-expenses-table">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h2 class="text-2xl font-bold text-slate-900 mb-1">Top Spending Categories</h2>
+                             <p class="text-slate-500 mb-4 text-sm">A visual look at where most of the money goes each week.</p>
+                            <div class="chart-container">
+                                <canvas id="expensesBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="savings" class="tab-pane hidden">
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-900">30k Savings Goal Tracker</h2>
+                        <p class="text-slate-500 mt-1">Our primary savings objective and projected path to success.</p>
+                    </div>
+                    <div class="grid lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
+                            <h3 class="text-lg font-bold mb-4">Goal Progress</h3>
+                            <div class="w-full bg-slate-200 rounded-full h-6 mb-2">
+                                <div id="progress-bar" class="bg-indigo-600 h-6 rounded-full text-center text-white text-sm flex items-center justify-center font-semibold" style="width: 0%;">0%</div>
+                            </div>
+                            <ul class="mt-4 space-y-2 text-sm">
+                                <li class="flex justify-between"><span class="font-medium text-slate-600">Amount Saved:</span> <span id="savings-current" class="font-bold"></span></li>
+                                <li class="flex justify-between"><span class="font-medium text-slate-600">Target:</span> <span id="savings-target" class="font-bold"></span></li>
+                                <li class="flex justify-between"><span class="font-medium text-slate-600">Amount Remaining:</span> <span id="savings-remaining" class="font-bold text-indigo-700"></span></li>
+                                <li class="flex justify-between border-t mt-2 pt-2"><span class="font-medium text-slate-600">Est. Completion Date:</span> <span id="savings-eta" class="font-bold"></span></li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                             <h3 class="text-lg font-bold mb-2">Projected Growth</h3>
+                             <p class="text-sm text-slate-500 mb-4">This chart shows the projected increase in our savings balance over the coming weeks.</p>
+                            <div class="chart-container">
+                                <canvas id="savingsLineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="data-input" class="tab-pane hidden">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Update Your Financial Data</h2>
+                        <p class="text-slate-500 mb-6">Enter your latest income, expense, and savings information below. All values should be numerical (e.g., `3188`, `50`). Dates should be `YYYY-MM-DD`.</p>
+
+                        <div class="grid md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-700 mb-3">Income (Weekly Net)</h3>
+                                <div class="mb-4">
+                                    <label for="input-combined-income" class="form-label">Combined Weekly Net Salary</label>
+                                    <input type="number" id="input-combined-income" class="form-input" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="input-emma-income" class="form-label">Emma's Weekly Net Salary</label>
+                                    <input type="number" id="input-emma-income" class="form-input" value="1391">
+                                </div>
+                                <div class="mb-0">
+                                    <label for="input-jordan-income" class="form-label">Jordan's Weekly Net Salary</label>
+                                    <input type="number" id="input-jordan-income" class="form-input" value="1797">
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-700 mb-3">Savings Goal (30k Goal)</h3>
+                                <div class="mb-4">
+                                    <label for="input-savings-current" class="form-label">Current Savings</label>
+                                    <input type="number" id="input-savings-current" class="form-input" value="21900">
+                                </div>
+                                <div class="mb-4">
+                                    <label for="input-savings-target" class="form-label">Target Savings</label>
+                                    <input type="number" id="input-savings-target" class="form-input" value="30000">
+                                </div>
+                                <div class="mb-4">
+                                    <label for="input-weekly-contribution" class="form-label">Weekly Contribution</label>
+                                    <input type="number" id="input-weekly-contribution" class="form-input" value="700">
+                                </div>
+                                <div class="mb-0">
+                                    <label for="input-savings-start-date" class="form-label">Start Date (YYYY-MM-DD)</label>
+                                    <input type="date" id="input-savings-start-date" class="form-input" value="2025-06-25">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Fixed Expenses</h3>
+                            <div id="fixed-expenses-inputs-container">
+                                </div>
+                            <button type="button" id="add-fixed-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                                + Add Fixed Expense
+                            </button>
+                        </div>
+
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Variable Expenses</h3>
+                            <div id="variable-expenses-inputs-container">
+                                </div>
+                            <button type="button" id="add-variable-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                                + Add Variable Expense
+                            </button>
+                        </div>
+
+                        <button id="update-dashboard-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                            Update Dashboard
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const formatCurrency = (value) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
+            const formatDate = (date) => new Date(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric'});
+
+            let currentData = {}; 
+
+            const defaultData = {
+                income: {
+                    combined: 3188, // This will be overwritten by sum of Emma's and Jordan's
+                    emma: 1391,
+                    jordan: 1797
+                },
+                fixedExpenses: [
+                    { name: 'Spotify', amount: 5, freq: 'Weekly' },
+                    { name: 'Internet', amount: 24, freq: 'Monthly' },
+                    { name: 'Mobile', amount: 36.5, freq: 'Monthly' },
+                    { name: 'Tolls', amount: 36, freq: 'Weekly' },
+                    { name: 'Car Repayment', amount: 100, freq: 'Monthly' },
+                    { name: 'Emma Car Insurance', amount: 52, freq: 'Monthly' },
+                    { name: 'Jordan Car Insurance', amount: 22, freq: 'Yearly' },
+                    { name: 'Water', amount: 40, freq: 'Quarterly' },
+                    { name: 'Electricity', amount: 80, freq: 'Quarterly' },
+                    { name: 'Solar', amount: 40, freq: 'Monthly' },
+                    { name: 'Rates', amount: 80, freq: 'Quarterly' },
+                    { name: 'Mortgage', amount: 1211, freq: 'Fortnightly' },
+                    { name: 'Petrol', amount: 40, freq: 'Weekly' },
+                    { name: 'Health Care', amount: 83, freq: 'Monthly' }, 
+                    { name: 'Gas', amount: 10, freq: 'Quarterly' },
+                    { name: 'Netflix', amount: 3, freq: 'Monthly' },
+                    { name: 'Kayo', amount: 10, freq: 'Monthly' },
+                    { name: 'Home Insurance', amount: 36, freq: 'Yearly' },
+                    { name: 'Cat Food / Litter', amount: 45, freq: 'Monthly' }
+                ],
+                variableExpenses: [
+                    { name: 'Groceries', budget: 300 },
+                    { name: 'Dining Out', budget: 50 },
+                    { name: 'Entertainment', budget: 30 },
+                    { name: 'Personal Care', budget: 20 },
+                    { name: 'Shopping', budget: 40 },
+                    { name: 'Transport (Other)', budget: 10 },
+                    { name: 'Hobbies', budget: 15 },
+                    { name: 'Miscellaneous', budget: 25 },
+                    { name: 'Charity', budget: 10 },
+                    { name: 'Gym', budget: 35 }
+                ],
+                savingsGoal: {
+                    name: '30k Goal',
+                    startDate: '2025-06-25',
+                    current: 21900,
+                    target: 30000,
+                    weeklyContribution: 700
+                }
+            };
+
+            const fixedExpenseFrequencies = ['Weekly', 'Fortnightly', 'Monthly', 'Quarterly', 'Yearly'];
+
+            let jordanDonutChart, emmaDonutChart, expensesBarChart, savingsLineChart;
+
+            const getWeeklyAmount = (amount, freq) => {
+                switch (freq.toLowerCase()) {
+                    case 'weekly': return amount;
+                    case 'fortnightly': return amount / 2;
+                    case 'monthly': return amount / 4.33; 
+                    case 'quarterly': return amount / 13; 
+                    case 'yearly': return amount / 52;
+                    default: return 0;
+                }
+            };
+
+            function createFixedExpenseRow(name = '', amount = '', freq = 'Weekly') {
+                const container = document.getElementById('fixed-expenses-inputs-container');
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'fixed-expense-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
+
+                rowDiv.innerHTML = `
+                    <div>
+                        <label class="form-label text-sm">Name</label>
+                        <input type="text" class="form-input text-sm fixed-expense-name" placeholder="e.g. Spotify" value="${name}">
+                    </div>
+                    <div>
+                        <label class="form-label text-sm">Amount</label>
+                        <input type="number" class="form-input text-sm fixed-expense-amount" placeholder="e.g. 5" value="${amount}">
+                    </div>
+                    <div>
+                        <label class="form-label text-sm">Frequency</label>
+                        <select class="form-input text-sm fixed-expense-freq">
+                            ${fixedExpenseFrequencies.map(f => `<option value="${f}" ${f === freq ? 'selected' : ''}>${f}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" class="remove-fixed-expense-row bg-red-500 text-white p-2 rounded-md hover:bg-red-600 w-full">Remove</button>
+                    </div>
+                `;
+
+                container.appendChild(rowDiv);
+
+                rowDiv.querySelector('.remove-fixed-expense-row').addEventListener('click', () => {
+                    rowDiv.remove();
+                });
+            }
+
+            function populateFixedExpensesInputs(fixedExpenses) {
+                const container = document.getElementById('fixed-expenses-inputs-container');
+                container.innerHTML = ''; 
+                if (fixedExpenses.length === 0) {
+                    for (let i = 0; i < 3; i++) {
+                        createFixedExpenseRow();
+                    }
+                } else {
+                    fixedExpenses.forEach(expense => {
+                        createFixedExpenseRow(expense.name, expense.amount, expense.freq);
+                    });
+                }
+            }
+
+            function createVariableExpenseRow(name = '', budget = '') {
+                const container = document.getElementById('variable-expenses-inputs-container');
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'variable-expense-row grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
+
+                rowDiv.innerHTML = `
+                    <div>
+                        <label class="form-label text-sm">Category Name</label>
+                        <input type="text" class="form-input text-sm variable-expense-name" placeholder="e.g. Groceries" value="${name}">
+                    </div>
+                    <div>
+                        <label class="form-label text-sm">Weekly Budget</label>
+                        <input type="number" class="form-input text-sm variable-expense-budget" placeholder="e.g. 300" value="${budget}">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" class="remove-variable-expense-row bg-red-500 text-white p-2 rounded-md hover:bg-red-600 w-full">Remove</button>
+                    </div>
+                `;
+                container.appendChild(rowDiv);
+
+                rowDiv.querySelector('.remove-variable-expense-row').addEventListener('click', () => {
+                    rowDiv.remove();
+                });
+            }
+
+            function populateVariableExpensesInputs(variableExpenses) {
+                const container = document.getElementById('variable-expenses-inputs-container');
+                container.innerHTML = ''; 
+                if (variableExpenses.length === 0) {
+                    for (let i = 0; i < 3; i++) {
+                        createVariableExpenseRow();
+                    }
+                } else {
+                    variableExpenses.forEach(expense => {
+                        createVariableExpenseRow(expense.name, expense.budget);
+                    });
+                }
+            }
+
+            function updateCombinedIncomeInput() {
+                const emmaIncome = parseFloat(document.getElementById('input-emma-income').value) || 0;
+                const jordanIncome = parseFloat(document.getElementById('input-jordan-income').value) || 0;
+                document.getElementById('input-combined-income').value = emmaIncome + jordanIncome;
+            }
+
+            function parseInputData() {
+                const parsed = {};
+
+                parsed.income = {
+                    emma: parseFloat(document.getElementById('input-emma-income').value) || 0,
+                    jordan: parseFloat(document.getElementById('input-jordan-income').value) || 0
+                };
+                // Calculate combined income directly from Emma's and Jordan's
+                parsed.income.combined = parsed.income.emma + parsed.income.jordan;
+                console.log('Parsed Income:', parsed.income);
+
+                parsed.savingsGoal = {
+                    name: 'Custom Goal', 
+                    startDate: document.getElementById('input-savings-start-date').value || new Date().toISOString().split('T')[0],
+                    current: parseFloat(document.getElementById('input-savings-current').value) || 0,
+                    target: parseFloat(document.getElementById('input-savings-target').value) || 0,
+                    weeklyContribution: parseFloat(document.getElementById('input-weekly-contribution').value) || 0
+                };
+                console.log('Parsed Savings Goal:', parsed.savingsGoal);
+
+                parsed.fixedExpenses = [];
+                document.querySelectorAll('.fixed-expense-row').forEach(rowDiv => {
+                    const nameInput = rowDiv.querySelector('.fixed-expense-name');
+                    const amountInput = rowDiv.querySelector('.fixed-expense-amount');
+                    const freqInput = rowDiv.querySelector('.fixed-expense-freq');
+
+                    const name = nameInput ? nameInput.value.trim() : '';
+                    const amount = amountInput ? parseFloat(amountInput.value) : NaN;
+                    const freq = freqInput ? freqInput.value : 'Weekly';
+
+                    if (name && !isNaN(amount) && amount >= 0) { 
+                        parsed.fixedExpenses.push({ name, amount, freq });
+                    } else if (name || !isNaN(amount)) { 
+                        console.warn('Skipping partially filled/invalid fixed expense row:', { name, amount, freq });
+                    }
+                });
+                console.log('Parsed Fixed Expenses:', parsed.fixedExpenses);
+
+                parsed.variableExpenses = [];
+                document.querySelectorAll('.variable-expense-row').forEach(rowDiv => {
+                    const nameInput = rowDiv.querySelector('.variable-expense-name');
+                    const budgetInput = rowDiv.querySelector('.variable-expense-budget');
+
+                    const name = nameInput ? nameInput.value.trim() : '';
+                    const budget = budgetInput ? parseFloat(budgetInput.value) : NaN;
+
+                    if (name && !isNaN(budget) && budget >= 0) {
+                        parsed.variableExpenses.push({ name, budget });
+                    } else if (name || !isNaN(budget)) {
+                        console.warn('Skipping partially filled/invalid variable expense row:', { name, budget });
+                    }
+                });
+                console.log('Parsed Variable Expenses:', parsed.variableExpenses);
+
+                return parsed;
+            }
+
+            function processAndRenderData(dataToUse) {
+                console.log('--- Starting processAndRenderData with new data ---');
+                currentData = dataToUse; 
+
+                const processed = {
+                    fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({...e, weekly: getWeeklyAmount(e.amount, e.freq)})),
+                    get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
+                    get totalVariableWeekly() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); },
+                    get totalExpensesWeekly() { return this.totalFixedWeekly + this.totalVariableWeekly; },
+                };
+                console.log('Processed totals:', processed);
+
+                // Dynamically calculate shares based on current income values
+                const emmaShare = currentData.income.combined > 0 ? currentData.income.emma / currentData.income.combined : 0.5;
+                const jordanShare = currentData.income.combined > 0 ? currentData.income.jordan / currentData.income.combined : 0.5;
+                
+                const emmaExpenses = processed.totalExpensesWeekly * emmaShare;
+                const jordanExpenses = processed.totalExpensesWeekly * jordanShare;
+
+                const emmaSavingsContribution = currentData.savingsGoal.weeklyContribution / 2;
+                const jordanSavingsContribution = currentData.savingsGoal.weeklyContribution / 2;
+
+                const emmaDisposable = currentData.income.emma - emmaExpenses - emmaSavingsContribution;
+                const jordanDisposable = currentData.income.jordan - jordanExpenses - jordanSavingsContribution;
+                console.log('Individual breakdowns:', { emmaExpenses, jordanExpenses, emmaSavingsContribution, jordanSavingsContribution, emmaDisposable, jordanDisposable });
+
+                document.getElementById('metric-income').textContent = formatCurrency(currentData.income.combined);
+                document.getElementById('metric-expenses').textContent = formatCurrency(processed.totalExpensesWeekly);
+                document.getElementById('metric-savings').textContent = formatCurrency(currentData.savingsGoal.weeklyContribution);
+                document.getElementById('metric-net').textContent = formatCurrency(currentData.income.combined - processed.totalExpensesWeekly - currentData.savingsGoal.weeklyContribution);
+                console.log('Key Metrics Updated');
+
+                document.getElementById('jordan-pay').textContent = formatCurrency(currentData.income.jordan);
+                document.getElementById('jordan-expenses').textContent = formatCurrency(jordanExpenses);
+                document.getElementById('jordan-savings').textContent = formatCurrency(jordanSavingsContribution);
+                document.getElementById('jordan-disposable').textContent = formatCurrency(jordanDisposable);
+
+                document.getElementById('emma-pay').textContent = formatCurrency(currentData.income.emma);
+                document.getElementById('emma-expenses').textContent = formatCurrency(emmaExpenses);
+                document.getElementById('emma-savings').textContent = formatCurrency(emmaSavingsContribution);
+                document.getElementById('emma-disposable').textContent = formatCurrency(emmaDisposable);
+
+                updateDonutChart('jordanChart', [jordanExpenses, jordanSavingsContribution, Math.max(0, jordanDisposable)]);
+                updateDonutChart('emmaChart', [emmaExpenses, emmaSavingsContribution, Math.max(0, emmaDisposable)]);
+                console.log('Weekly Breakdown Charts Updated');
+
+                const tableBody = document.getElementById('fixed-expenses-table');
+                tableBody.innerHTML = '';
+                processed.fixedExpensesWeekly
+                    .sort((a,b) => b.weekly - a.weekly)
+                    .forEach(e => {
+                        const row = `
+                            <tr class="border-b border-slate-100">
+                                <td class="p-3">${e.name}</td>
+                                <td class="p-3 text-right font-semibold">${formatCurrency(e.weekly)}</td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                console.log('Fixed Expenses Table Updated');
+
+                const allExpenseCategories = [
+                    ...processed.fixedExpensesWeekly,
+                    ...currentData.variableExpenses.map(v => ({ name: v.name, weekly: v.budget }))
+                ];
+                const expenseCategoriesForChart = allExpenseCategories
+                    .filter(e => e.weekly && e.weekly > 0)
+                    .sort((a, b) => b.weekly - a.weekly)
+                    .slice(0, 7);
+                console.log('Expense Categories for Bar Chart:', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
+                updateBarChart('expensesBarChart', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
+                console.log('Expenses Bar Chart Updated');
+
+                const { current, target, weeklyContribution, startDate } = currentData.savingsGoal;
+                const progress = target > 0 ? (current / target) * 100 : 0;
+                const remaining = Math.max(0, target - current);
+                const weeksNeeded = weeklyContribution > 0 ? remaining / weeklyContribution : (remaining > 0 ? Infinity : 0);
+                
+                const eta = new Date(startDate);
+                if (isFinite(weeksNeeded)) {
+                    eta.setDate(new Date(startDate).getDate() + (weeksNeeded * 7));
+                } else {
+                    eta.setTime(0);
+                }
+
+                document.getElementById('progress-bar').style.width = `${Math.min(100, Math.round(progress))}%`;
+                document.getElementById('progress-bar').textContent = `${Math.round(progress)}%`;
+                document.getElementById('savings-current').textContent = formatCurrency(current);
+                document.getElementById('savings-target').textContent = formatCurrency(target);
+                document.getElementById('savings-remaining').textContent = formatCurrency(remaining);
+                document.getElementById('savings-eta').textContent = isFinite(weeksNeeded) ? formatDate(eta) : 'N/A (Adjust Contribution)';
+                console.log('Savings Progress & Info Updated');
+                
+                const projectionLabels = [];
+                const projectionData = [];
+                let balance = current;
+                let currentProjectionDate = new Date(startDate);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (currentProjectionDate < today) {
+                    currentProjectionDate = new Date(today);
+                    balance = current; 
+                } else {
+                    balance = current;
+                }
+
+                let weekCount = 0;
+                const maxWeeksToProject = 52 * 2; 
+                while (weekCount < maxWeeksToProject && (balance < target * 1.1 || weekCount < 20)) {
+                    projectionLabels.push(formatDate(currentProjectionDate));
+                    projectionData.push(balance);
+                    
+                    balance += weeklyContribution;
+                    currentProjectionDate.setDate(currentProjectionDate.getDate() + 7);
+                    weekCount++;
+                }
+
+                updateLineChart('savingsLineChart', projectionLabels, projectionData);
+                console.log('Savings Line Chart Updated');
+                console.log('--- Finished processAndRenderData ---');
+            }
+
+            const chartDefaults = {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#1e293b',
+                        titleColor: '#cbd5e1',
+                        bodyColor: '#f1f5f9',
+                        padding: 10,
+                        cornerRadius: 6,
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+            };
+
+            function updateDonutChart(canvasId, chartData) {
+                console.log('Attempting to update donut chart:', canvasId);
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (!ctx) {
+                    console.error('Canvas context not found for:', canvasId);
+                    return;
+                }
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js library not loaded. Cannot create chart.');
+                    return;
+                }
+
+                let chartInstance;
+                if (canvasId === 'jordanChart') chartInstance = jordanDonutChart;
+                if (canvasId === 'emmaChart') chartInstance = emmaDonutChart;
+
+                if (chartInstance) {
+                    console.log('Destroying existing donut chart instance:', canvasId);
+                    chartInstance.destroy();
+                }
+
+                try {
+                    const newChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Expenses', 'Savings', 'Disposable'],
+                            datasets: [{
+                                data: chartData,
+                                backgroundColor: ['#ef4444', '#3b82f6', '#64748b'],
+                                borderColor: '#ffffff',
+                                borderWidth: 4,
+                            }]
+                        },
+                        options: { ...chartDefaults }
+                    });
+                    if (canvasId === 'jordanChart') jordanDonutChart = newChart;
+                    if (canvasId === 'emmaChart') emmaDonutChart = newChart;
+                    console.log('Donut chart updated/created:', canvasId, newChart);
+                } catch (error) {
+                    console.error('Error creating/updating donut chart:', canvasId, error);
+                }
+            }
+            
+            function updateBarChart(canvasId, labels, data) {
+                console.log('Attempting to update bar chart:', canvasId);
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (!ctx) {
+                    console.error('Canvas context not found for:', canvasId);
+                    return;
+                }
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js library not loaded. Cannot create chart.');
+                    return;
+                }
+
+                if (expensesBarChart) {
+                    console.log('Destroying existing bar chart instance:', canvasId);
+                    expensesBarChart.destroy();
+                }
+
+                try {
+                    expensesBarChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Weekly Cost',
+                                data: data,
+                                backgroundColor: '#4f46e5',
+                                borderRadius: 4,
+                            }]
+                        },
+                        options: {
+                            ...chartDefaults,
+                            indexAxis: 'y',
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => formatCurrency(value),
+                                    }
+                                },
+                                y: {
+                                    ticks: {
+                                        autoSkip: false,
+                                        maxRotation: 0,
+                                        minRotation: 0,
+                                        callback: function(value, index, values) {
+                                            const label = this.getLabelForValue(value);
+                                            const maxLength = 16;
+                                            if (label.length > maxLength) {
+                                                return label.match(new RegExp('.{1,' + maxLength + '}', 'g'));
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('Bar chart updated/created:', canvasId, expensesBarChart);
+                } catch (error) {
+                    console.error('Error creating/updating bar chart:', canvasId, error);
+                }
+            }
+
+            function updateLineChart(canvasId, labels, data) {
+                console.log('Attempting to update line chart:', canvasId);
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if (!ctx) {
+                    console.error('Canvas context not found for:', canvasId);
+                    return;
+                }
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js library not loaded. Cannot create chart.');
+                    return;
+                }
+
+                if (savingsLineChart) {
+                    console.log('Destroying existing line chart instance:', canvasId);
+                    savingsLineChart.destroy();
+                }
+
+                try {
+                    savingsLineChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Projected Balance',
+                                data: data,
+                                borderColor: '#4f46e5',
+                                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                                fill: true,
+                                tension: 0.1,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            ...chartDefaults,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => formatCurrency(value),
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        maxRotation: 0,
+                                        minRotation: 0,
+                                        autoSkip: true,
+                                        maxTicksLimit: 6
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('Line chart updated/created:', canvasId, savingsLineChart);
+                } catch (error) {
+                    console.error('Error creating/updating line chart:', canvasId, error);
+                }
+            }
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const panes = document.querySelectorAll('.tab-pane');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    tab.classList.add('tab-active');
+
+                    panes.forEach(pane => {
+                        if (pane.id === tab.dataset.tab) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
+                createFixedExpenseRow();
+            });
+
+            document.getElementById('add-variable-expense-button').addEventListener('click', () => {
+                createVariableExpenseRow();
+            });
+
+            // Listen for input changes on Emma's and Jordan's salaries to update combined
+            document.getElementById('input-emma-income').addEventListener('input', updateCombinedIncomeInput);
+            document.getElementById('input-jordan-income').addEventListener('input', updateCombinedIncomeInput);
+
+
+            document.getElementById('update-dashboard-button').addEventListener('click', () => {
+                console.log('Update Dashboard button clicked');
+                const newData = parseInputData();
+                processAndRenderData(newData);
+            });
+
+            // Initial render: Populate input fields and then process/render dashboard
+            populateFixedExpensesInputs(defaultData.fixedExpenses);
+            populateVariableExpensesInputs(defaultData.variableExpenses); 
+            
+            // Set initial combined income based on default Emma and Jordan salaries
+            updateCombinedIncomeInput(); 
+            processAndRenderData(defaultData);
+        });
+    </script>
+</body>
+</html>
