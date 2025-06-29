@@ -1012,144 +1012,146 @@
                 }
             }
 
-            const tabs = document.querySelectorAll('.tab-button');
-            const panes = document.querySelectorAll('.tab-pane');
+            // Function to attach all event listeners
+            function attachAllEventListeners() {
+                const tabs = document.querySelectorAll('.tab-button');
+                const panes = document.querySelectorAll('.tab-pane');
 
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('tab-active'));
-                    tab.classList.add('tab-active');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('tab-active'));
+                        tab.classList.add('tab-active');
 
-                    panes.forEach(pane => {
-                        if (pane.id === tab.dataset.tab) {
-                            pane.classList.remove('hidden');
-                        } else {
-                            pane.classList.add('hidden');
-                        }
+                        panes.forEach(pane => {
+                            if (pane.id === tab.dataset.tab) {
+                                pane.classList.remove('hidden');
+                            } else {
+                                pane.classList.add('hidden');
+                            }
+                        });
                     });
                 });
-            });
 
-            document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
-                createFixedExpenseRow('', '', '', 'Weekly'); 
-                saveData(currentData);
-            });
+                document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
+                    createFixedExpenseRow('', '', '', 'Weekly'); 
+                    saveData(currentData);
+                });
 
-            document.getElementById('add-actual-saving-button').addEventListener('click', () => {
-                const actualAmountInput = document.getElementById('input-weekly-actual-amount');
-                const actualDateInput = document.getElementById('input-weekly-actual-date');
-                
-                const amount = parseFloat(actualAmountInput.value);
-                const date = actualDateInput.value || new Date().toISOString().split('T')[0];
-
-                if (!isNaN(amount) && amount > 0) {
-                    currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
-                    currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    currentData.savingsGoal.current += amount; // Directly update the current value here
+                document.getElementById('add-actual-saving-button').addEventListener('click', () => {
+                    const actualAmountInput = document.getElementById('input-weekly-actual-amount');
+                    const actualDateInput = document.getElementById('input-weekly-actual-date');
                     
-                    actualAmountInput.value = '';
-                    actualDateInput.value = '';
+                    const amount = parseFloat(actualAmountInput.value);
+                    const date = actualDateInput.value || new Date().toISOString().split('T')[0];
 
-                    processAndRenderData(currentData); // This will just re-render, not recalculate current
-                    renderActualSavingsLog(); 
+                    if (!isNaN(amount) && amount > 0) {
+                        currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
+                        currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+                        currentData.savingsGoal.current += amount; 
+                        
+                        actualAmountInput.value = '';
+                        actualDateInput.value = '';
+
+                        processAndRenderData(currentData);
+                        renderActualSavingsLog(); 
+                        saveData(currentData);
+                    } else {
+                        console.warn('Invalid actual saving amount entered. Please enter a positive number.');
+                    }
+                });
+
+                document.getElementById('add-actual-variable-spending-button').addEventListener('click', () => {
+                    const categoryInput = document.getElementById('input-actual-variable-category');
+                    const amountInput = document.getElementById('input-actual-variable-amount');
+                    const dateInput = document.getElementById('input-actual-variable-date');
+
+                    const category = categoryInput.value.trim();
+                    const amount = parseFloat(amountInput.value);
+                    const date = dateInput.value || new Date().toISOString().split('T')[0];
+
+                    if (category && !isNaN(amount) && amount > 0) {
+                        currentData.actualVariableSpendingLog.push({ category: category, amount: amount, date: date });
+                        currentData.actualVariableSpendingLog.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                        categoryInput.value = '';
+                        amountInput.value = '';
+                        dateInput.value = '';
+
+                        processAndRenderData(currentData);
+                        renderActualVariableSpendingLog();
+                        saveData(currentData);
+                    } else {
+                        console.warn('Invalid actual variable spending entry. Please fill in category and a positive amount.');
+                    }
+                });
+
+                document.getElementById('reset-variable-spending-button').addEventListener('click', () => {
+                    if (confirm('Are you sure you want to reset all logged actual variable spending for the week? This action cannot be undone.')) {
+                        currentData.actualVariableSpendingLog = [];
+                        processAndRenderData(currentData);
+                        renderActualVariableSpendingLog();
+                        saveData(currentData);
+                        console.log('Actual variable spending log reset.');
+                    }
+                });
+
+                document.getElementById('add-savings-used-button').addEventListener('click', () => {
+                    const amountInput = document.getElementById('input-savings-used-amount');
+                    const reasonInput = document.getElementById('input-savings-used-reason');
+                    const dateInput = document.getElementById('input-savings-used-date');
+                    
+                    const amount = parseFloat(amountInput.value);
+                    const reason = reasonInput.value.trim();
+                    const date = dateInput.value || new Date().toISOString().split('T')[0];
+
+                    if (!isNaN(amount) && amount > 0 && reason) {
+                        currentData.savingsGoal.actualSavingsUsedLog.push({ date: date, amount: amount, reason: reason });
+                        currentData.savingsGoal.actualSavingsUsedLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+                        currentData.savingsGoal.current -= amount; 
+
+                        amountInput.value = '';
+                        reasonInput.value = '';
+                        dateInput.value = '';
+
+                        processAndRenderData(currentData);
+                        renderActualSavingsUsedLog();
+                        saveData(currentData);
+                    } else {
+                        console.warn('Invalid savings used entry. Please fill in amount, reason, and ensure amount is positive.');
+                    }
+                });
+
+                document.getElementById('input-emma-income').addEventListener('input', () => {
+                    updateCombinedIncomeInput();
                     saveData(currentData);
-                } else {
-                    console.warn('Invalid actual saving amount entered. Please enter a positive number.');
-                }
-            });
-
-            document.getElementById('add-actual-variable-spending-button').addEventListener('click', () => {
-                const categoryInput = document.getElementById('input-actual-variable-category');
-                const amountInput = document.getElementById('input-actual-variable-amount');
-                const dateInput = document.getElementById('input-actual-variable-date');
-
-                const category = categoryInput.value.trim();
-                const amount = parseFloat(amountInput.value);
-                const date = dateInput.value || new Date().toISOString().split('T')[0];
-
-                if (category && !isNaN(amount) && amount > 0) {
-                    currentData.actualVariableSpendingLog.push({ category: category, amount: amount, date: date });
-                    currentData.actualVariableSpendingLog.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                    categoryInput.value = '';
-                    amountInput.value = '';
-                    dateInput.value = '';
-
-                    processAndRenderData(currentData);
-                    renderActualVariableSpendingLog();
+                });
+                document.getElementById('input-jordan-income').addEventListener('input', () => {
+                    updateCombinedIncomeInput();
                     saveData(currentData);
-                } else {
-                    console.warn('Invalid actual variable spending entry. Please fill in category and a positive amount.');
-                }
-            });
-
-            document.getElementById('reset-variable-spending-button').addEventListener('click', () => {
-                if (confirm('Are you sure you want to reset all logged actual variable spending for the week? This action cannot be undone.')) {
-                    currentData.actualVariableSpendingLog = [];
-                    processAndRenderData(currentData);
-                    renderActualVariableSpendingLog();
-                    saveData(currentData);
-                    console.log('Actual variable spending log reset.');
-                }
-            });
-
-            document.getElementById('add-savings-used-button').addEventListener('click', () => {
-                const amountInput = document.getElementById('input-savings-used-amount');
-                const reasonInput = document.getElementById('input-savings-used-reason');
-                const dateInput = document.getElementById('input-savings-used-date');
+                });
                 
-                const amount = parseFloat(amountInput.value);
-                const reason = reasonInput.value.trim();
-                const date = dateInput.value || new Date().toISOString().split('T')[0];
-
-                if (!isNaN(amount) && amount > 0 && reason) {
-                    currentData.savingsGoal.actualSavingsUsedLog.push({ date: date, amount: amount, reason: reason });
-                    currentData.savingsGoal.actualSavingsUsedLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    currentData.savingsGoal.current -= amount; // Directly update the current value here
-
-                    amountInput.value = '';
-                    reasonInput.value = '';
-                    dateInput.value = '';
-
-                    processAndRenderData(currentData);
-                    renderActualSavingsUsedLog();
+                // These inputs are handled by `parseInputData` on `update-dashboard-button` click for now.
+                // If you want them to trigger a save on every input, uncomment these:
+                /*
+                document.getElementById('input-savings-target').addEventListener('input', () => {
                     saveData(currentData);
-                } else {
-                    console.warn('Invalid savings used entry. Please fill in amount, reason, and ensure amount is positive.');
-                }
-            });
+                });
+                document.getElementById('input-weekly-contribution').addEventListener('input', () => {
+                    saveData(currentData);
+                });
+                document.getElementById('input-savings-start-date').addEventListener('change', () => {
+                    saveData(currentData);
+                });
+                */
 
-
-            document.getElementById('input-emma-income').addEventListener('input', () => {
-                updateCombinedIncomeInput();
-                saveData(currentData);
-            });
-            document.getElementById('input-jordan-income').addEventListener('input', () => {
-                updateCombinedIncomeInput();
-                saveData(currentData);
-            });
-            // These inputs are handled by `parseInputData` on `update-dashboard-button` click for now.
-            // If you want them to trigger a save on every input, uncomment these:
-            /*
-            document.getElementById('input-savings-target').addEventListener('input', () => {
-                saveData(currentData);
-            });
-            document.getElementById('input-weekly-contribution').addEventListener('input', () => {
-                saveData(currentData);
-            });
-            document.getElementById('input-savings-start-date').addEventListener('change', () => {
-                saveData(currentData);
-            });
-            */
-
-
-            document.getElementById('update-dashboard-button').addEventListener('click', () => {
-                console.log('Update Dashboard button clicked');
-                const newData = parseInputData();
-                currentData = newData; // Update currentData with parsed form values
-                processAndRenderData(currentData);
-                saveData(currentData);
-            });
+                document.getElementById('update-dashboard-button').addEventListener('click', () => {
+                    console.log('Update Dashboard button clicked');
+                    const newData = parseInputData();
+                    currentData = newData; 
+                    processAndRenderData(currentData);
+                    saveData(currentData);
+                });
+            }
 
 
             // Function to populate inputs and render dashboard from loaded data
@@ -1157,7 +1159,7 @@
                 // Populate income inputs
                 document.getElementById('input-emma-income').value = data.income.emma;
                 document.getElementById('input-jordan-income').value = data.income.jordan;
-                updateCombinedIncomeInput(); // Recalculate combined based on individual inputs
+                updateCombinedIncomeInput(); 
 
                 // Populate fixed expenses inputs
                 populateFixedExpensesInputs(data.fixedExpenses);
@@ -1166,10 +1168,10 @@
                 document.getElementById('input-savings-target').value = data.savingsGoal.target;
                 document.getElementById('input-weekly-contribution').value = data.savingsGoal.weeklyContribution;
                 document.getElementById('input-savings-start-date').value = data.savingsGoal.startDate;
-                document.getElementById('input-savings-current').value = data.savingsGoal.current; // Ensure readonly input is set
+                document.getElementById('input-savings-current').value = data.savingsGoal.current; 
 
                 // Process and render all dashboard sections based on the loaded data
-                processAndRenderData(data); // This will just re-render, not recalculate current savings base
+                processAndRenderData(data); 
                 renderActualSavingsLog();
                 renderActualSavingsUsedLog();
                 renderActualVariableSpendingLog();
@@ -1181,11 +1183,13 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
 
-                    // Changed authentication to always sign in anonymously for external hosting
                     await signInAnonymously(auth);
                     
                     userId = auth.currentUser.uid;
                     console.log('Firebase initialized. User ID:', userId);
+
+                    // Attach event listeners ONLY after Firebase is ready
+                    attachAllEventListeners();
 
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
                     onSnapshot(docRef, (docSnap) => {
@@ -1193,7 +1197,7 @@
 
                         if (docSnap.exists()) {
                             let loadedData = docSnap.data();
-                            console.log("Current data from Firestore. Current savings:", loadedData.savingsGoal.current); // Log loaded value
+                            console.log("Current data from Firestore. Current savings:", loadedData.savingsGoal.current); 
 
                             // Ensure logs and arrays are valid
                             loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
