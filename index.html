@@ -6,10 +6,10 @@
     <title>Our Financial Dashboard</title>
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // Import Firebase Analytics
+        // Unifying all Firebase SDK versions to 11.9.1 for consistency
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
 
         // Expose Firebase objects globally for use in the main script block
@@ -23,7 +23,7 @@
             doc,
             setDoc,
             onSnapshot,
-            getAnalytics // Expose getAnalytics as well
+            getAnalytics
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1017,6 +1017,7 @@
 
             // Function to attach all event listeners that are dependent on Firebase
             function attachFirebaseDependentEventListeners() {
+                console.log("Attaching Firebase dependent event listeners.");
                 document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
                     createFixedExpenseRow('', '', '', 'Weekly'); 
                     saveData(currentData);
@@ -1141,6 +1142,7 @@
 
             // Function to populate inputs and render dashboard from loaded data
             function populateInputsAndRender(data) {
+                console.log("Populating inputs and rendering dashboard with data:", data);
                 // Populate income inputs
                 document.getElementById('input-emma-income').value = data.income.emma;
                 document.getElementById('input-jordan-income').value = data.income.jordan;
@@ -1160,6 +1162,7 @@
                 renderActualSavingsLog();
                 renderActualSavingsUsedLog();
                 renderActualVariableSpendingLog();
+                console.log("Dashboard rendering complete.");
             }
 
             // Attach tab switching event listeners immediately on DOMContentLoaded
@@ -1183,60 +1186,75 @@
 
 
             async function initializeFirebaseAndLoadData() {
+                console.log("Attempting to initialize Firebase and load data...");
                 try {
                     const app = initializeApp(firebaseConfig);
+                    console.log("Firebase app initialized.");
                     db = getFirestore(app);
                     auth = getAuth(app);
-                    analytics = getAnalytics(app); // Initialize Firebase Analytics
+                    analytics = getAnalytics(app); 
+                    console.log("Firebase services (Firestore, Auth, Analytics) obtained.");
 
-                    await signInAnonymously(auth);
-                    
-                    userId = auth.currentUser.uid;
+                    console.log("Attempting anonymous sign-in...");
+                    const userCredential = await signInAnonymously(auth);
+                    userId = userCredential.user.uid;
                     console.log('Firebase initialized. User ID:', userId);
 
                     // Attach event listeners ONLY after Firebase is ready
                     attachFirebaseDependentEventListeners();
 
+                    console.log(`Setting up Firestore onSnapshot listener for path: artifacts/${appId}/users/${userId}/financialData/current`);
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
                     onSnapshot(docRef, (docSnap) => {
+                        console.log("Firestore onSnapshot callback triggered.");
                         loadingOverlay.style.display = 'none'; // Hide loading indicator
 
                         if (docSnap.exists()) {
                             let loadedData = docSnap.data();
-                            console.log("Current data from Firestore. Current savings:", loadedData.savingsGoal.current); 
+                            console.log("Data loaded from Firestore:", loadedData); 
 
-                            // Ensure logs and arrays are valid
-                            loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
-                            loadedData.savingsGoal.actualSavingsUsedLog = loadedData.savingsGoal.actualSavingsUsedLog || [];
-                            loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
+                            // Ensure logs and arrays are valid objects/arrays, falling back to empty if undefined or null
+                            loadedData.income = loadedData.income || {};
+                            loadedData.income.emma = loadedData.income.emma ?? defaultData.income.emma; // Use nullish coalescing for explicit defaults
+                            loadedData.income.jordan = loadedData.income.jordan ?? defaultData.income.jordan;
+                            loadedData.income.combined = loadedData.income.combined ?? defaultData.income.combined;
+
                             loadedData.fixedExpenses = loadedData.fixedExpenses || [];
                             loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses; 
                             
-                            // Ensure savingsGoal.current is a number, fall back to default if invalid
-                            if (typeof loadedData.savingsGoal.current !== 'number' || isNaN(loadedData.savingsGoal.current)) {
-                                loadedData.savingsGoal.current = defaultData.savingsGoal.current;
-                                console.warn("Loaded savingsGoal.current was invalid, falling back to default:", loadedData.savingsGoal.current);
-                            }
+                            loadedData.savingsGoal = loadedData.savingsGoal || {};
+                            loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
+                            loadedData.savingsGoal.actualSavingsUsedLog = loadedData.savingsGoal.actualSavingsUsedLog || [];
+                            loadedData.savingsGoal.current = loadedData.savingsGoal.current ?? defaultData.savingsGoal.current;
+                            loadedData.savingsGoal.target = loadedData.savingsGoal.target ?? defaultData.savingsGoal.target;
+                            loadedData.savingsGoal.weeklyContribution = loadedData.savingsGoal.weeklyContribution ?? defaultData.savingsGoal.weeklyContribution;
+                            loadedData.savingsGoal.startDate = loadedData.savingsGoal.startDate || defaultData.savingsGoal.startDate;
 
+                            loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
+                            
+                            console.log("Current savings after data loading:", loadedData.savingsGoal.current);
                             // Use the loaded data to populate and render
                             populateInputsAndRender(loadedData);
                         } else {
-                            console.log("No financial data found in Firestore, initializing with default data.");
+                            console.log("No financial data found in Firestore, initializing with default data and saving.");
                             currentData = defaultData;
                             populateInputsAndRender(currentData);
                             saveData(currentData); // Save default data to Firestore for next time
                         }
                     }, (error) => {
-                        console.error("Error listening to document: ", error);
-                        loadingOverlay.style.display = 'none';
+                        console.error("Firestore onSnapshot listener error:", error);
+                        loadingOverlay.style.display = 'none'; // Hide on error too
+                        if (error.code === 'permission-denied') {
+                            console.error("PERMISSION DENIED: Please check your Firestore Security Rules in Firebase Console. Ensure 'allow read, write: if request.auth != null && request.auth.uid == userId;' is correctly set for your data path.");
+                        }
                         // Fallback to default data if there's a Firestore error
                         currentData = defaultData;
                         populateInputsAndRender(currentData);
                     });
 
                 } catch (error) {
-                    console.error("Error initializing Firebase or signing in:", error);
-                    loadingOverlay.style.display = 'none';
+                    console.error("FATAL ERROR: Error initializing Firebase or signing in:", error);
+                    loadingOverlay.style.display = 'none'; // Hide on fatal error
                     // Fallback to default data if Firebase initialization fails
                     currentData = defaultData;
                     populateInputsAndRender(currentData);
@@ -1245,3 +1263,6 @@
 
             initializeFirebaseAndLoadData();
         });
+    </script>
+</body>
+</html>
