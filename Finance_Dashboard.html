@@ -228,22 +228,36 @@
                                 </div>
                                 <div class="mb-0">
                                     <label for="input-savings-start-date" class="form-label">Start Date (YYYY-MM-DD)</label>
-                                    <input type="date" id="input-savings-start-date" class="form-input" value="2025-06-25">
+                                    <input type="date" id="input-savings-start-date" class="form-input"> 
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Fixed Expenses</h3>
-                            <div id="fixed-expenses-inputs-container">
-                                </div>
-                            <button type="button" id="add-fixed-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
-                                + Add Fixed Expense
-                            </button>
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Fixed Expenses (One per line: `Name,Amount,Frequency`)</h3>
+                            <textarea id="input-fixed-expenses" class="form-textarea" placeholder="Example:&#x0A;Spotify,5,Weekly&#x0A;Internet,24,Monthly&#x0A;Mortgage,1211,Fortnightly">Spotify,5,Weekly
+Internet,24,Monthly
+Mobile,36.5,Monthly
+Tolls,36,Weekly
+Car Repayment,100,Monthly
+Emma Car Insurance,52,Monthly
+Jordan Car Insurance,22,Yearly
+Water,40,Quarterly
+Electricity,80,Quarterly
+Solar,40,Monthly
+Rates,80,Quarterly
+Mortgage,1211,Fortnightly
+Petrol,40,Weekly
+Health Care,83,Monthly
+Gas,10,Quarterly
+Netflix,3,Monthly
+Kayo,10,Monthly
+Home Insurance,36,Yearly
+Cat Food / Litter,45,Monthly</textarea>
                         </div>
 
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Variable Expenses</h3>
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Variable Expenses (Weekly Budget)</h3>
                             <div id="variable-expenses-inputs-container">
                                 </div>
                             <button type="button" id="add-variable-expense-button" class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
@@ -264,37 +278,57 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             const formatCurrency = (value) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
-            const formatDate = (date) => new Date(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric'});
+            const formatDate = (date) => {
+                if (!(date instanceof Date) || isNaN(date)) {
+                    return 'N/A';
+                }
+                return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric'});
+            };
 
             let currentData = {}; 
 
+            const getWeeklyAmount = (amount, freq) => {
+                switch (freq.toLowerCase()) {
+                    case 'weekly': return amount;
+                    case 'fortnightly': return amount / 2;
+                    case 'monthly': return amount / 4.33; 
+                    case 'quarterly': return amount / 13; 
+                    case 'yearly': return amount / 52;
+                    default: return 0;
+                }
+            };
+
+            // Original default fixed expenses with frequency
+            const defaultFixedExpensesWithFreq = [
+                { name: 'Spotify', amount: 5, freq: 'Weekly' },
+                { name: 'Internet', amount: 24, freq: 'Monthly' },
+                { name: 'Mobile', amount: 36.5, freq: 'Monthly' },
+                { name: 'Tolls', amount: 36, freq: 'Weekly' },
+                { name: 'Car Repayment', amount: 100, freq: 'Monthly' },
+                { name: 'Emma Car Insurance', amount: 52, freq: 'Monthly' },
+                { name: 'Jordan Car Insurance', amount: 22, freq: 'Yearly' },
+                { name: 'Water', amount: 40, freq: 'Quarterly' },
+                { name: 'Electricity', amount: 80, freq: 'Quarterly' },
+                { name: 'Solar', amount: 40, freq: 'Monthly' },
+                { name: 'Rates', amount: 80, freq: 'Quarterly' },
+                { name: 'Mortgage', amount: 1211, freq: 'Fortnightly' },
+                { name: 'Petrol', amount: 40, freq: 'Weekly' },
+                { name: 'Health Care', amount: 83, freq: 'Monthly' }, 
+                { name: 'Gas', amount: 10, freq: 'Quarterly' },
+                { name: 'Netflix', amount: 3, freq: 'Monthly' },
+                { name: 'Kayo', amount: 10, freq: 'Monthly' },
+                { name: 'Home Insurance', amount: 36, freq: 'Yearly' },
+                { name: 'Cat Food / Litter', amount: 45, freq: 'Monthly' }
+            ];
+
             const defaultData = {
                 income: {
-                    combined: 3188, // This will be overwritten by sum of Emma's and Jordan's
                     emma: 1391,
-                    jordan: 1797
+                    jordan: 1797,
+                    combined: 3188 
                 },
-                fixedExpenses: [
-                    { name: 'Spotify', amount: 5, freq: 'Weekly' },
-                    { name: 'Internet', amount: 24, freq: 'Monthly' },
-                    { name: 'Mobile', amount: 36.5, freq: 'Monthly' },
-                    { name: 'Tolls', amount: 36, freq: 'Weekly' },
-                    { name: 'Car Repayment', amount: 100, freq: 'Monthly' },
-                    { name: 'Emma Car Insurance', amount: 52, freq: 'Monthly' },
-                    { name: 'Jordan Car Insurance', amount: 22, freq: 'Yearly' },
-                    { name: 'Water', amount: 40, freq: 'Quarterly' },
-                    { name: 'Electricity', amount: 80, freq: 'Quarterly' },
-                    { name: 'Solar', amount: 40, freq: 'Monthly' },
-                    { name: 'Rates', amount: 80, freq: 'Quarterly' },
-                    { name: 'Mortgage', amount: 1211, freq: 'Fortnightly' },
-                    { name: 'Petrol', amount: 40, freq: 'Weekly' },
-                    { name: 'Health Care', amount: 83, freq: 'Monthly' }, 
-                    { name: 'Gas', amount: 10, freq: 'Quarterly' },
-                    { name: 'Netflix', amount: 3, freq: 'Monthly' },
-                    { name: 'Kayo', amount: 10, freq: 'Monthly' },
-                    { name: 'Home Insurance', amount: 36, freq: 'Yearly' },
-                    { name: 'Cat Food / Litter', amount: 45, freq: 'Monthly' }
-                ],
+                // Restore fixed expenses to original format for default display in textarea
+                fixedExpenses: defaultFixedExpensesWithFreq, 
                 variableExpenses: [
                     { name: 'Groceries', budget: 300 },
                     { name: 'Dining Out', budget: 50 },
@@ -309,72 +343,22 @@
                 ],
                 savingsGoal: {
                     name: '30k Goal',
-                    startDate: '2025-06-25',
+                    startDate: new Date().toISOString().split('T')[0], 
                     current: 21900,
                     target: 30000,
                     weeklyContribution: 700
                 }
             };
 
-            const fixedExpenseFrequencies = ['Weekly', 'Fortnightly', 'Monthly', 'Quarterly', 'Yearly'];
 
             let jordanDonutChart, emmaDonutChart, expensesBarChart, savingsLineChart;
 
-            const getWeeklyAmount = (amount, freq) => {
-                switch (freq.toLowerCase()) {
-                    case 'weekly': return amount;
-                    case 'fortnightly': return amount / 2;
-                    case 'monthly': return amount / 4.33; 
-                    case 'quarterly': return amount / 13; 
-                    case 'yearly': return amount / 52;
-                    default: return 0;
-                }
-            };
+            // This function is no longer needed for fixed expenses, as we're using a textarea
+            // function createFixedExpenseRow(name = '', weeklyCost = '') { ... }
 
-            function createFixedExpenseRow(name = '', amount = '', freq = 'Weekly') {
-                const container = document.getElementById('fixed-expenses-inputs-container');
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'fixed-expense-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
-
-                rowDiv.innerHTML = `
-                    <div>
-                        <label class="form-label text-sm">Name</label>
-                        <input type="text" class="form-input text-sm fixed-expense-name" placeholder="e.g. Spotify" value="${name}">
-                    </div>
-                    <div>
-                        <label class="form-label text-sm">Amount</label>
-                        <input type="number" class="form-input text-sm fixed-expense-amount" placeholder="e.g. 5" value="${amount}">
-                    </div>
-                    <div>
-                        <label class="form-label text-sm">Frequency</label>
-                        <select class="form-input text-sm fixed-expense-freq">
-                            ${fixedExpenseFrequencies.map(f => `<option value="${f}" ${f === freq ? 'selected' : ''}>${f}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button type="button" class="remove-fixed-expense-row bg-red-500 text-white p-2 rounded-md hover:bg-red-600 w-full">Remove</button>
-                    </div>
-                `;
-
-                container.appendChild(rowDiv);
-
-                rowDiv.querySelector('.remove-fixed-expense-row').addEventListener('click', () => {
-                    rowDiv.remove();
-                });
-            }
-
-            function populateFixedExpensesInputs(fixedExpenses) {
-                const container = document.getElementById('fixed-expenses-inputs-container');
-                container.innerHTML = ''; 
-                if (fixedExpenses.length === 0) {
-                    for (let i = 0; i < 3; i++) {
-                        createFixedExpenseRow();
-                    }
-                } else {
-                    fixedExpenses.forEach(expense => {
-                        createFixedExpenseRow(expense.name, expense.amount, expense.freq);
-                    });
-                }
+            function populateFixedExpensesInputTextarea(fixedExpenses) {
+                const textarea = document.getElementById('input-fixed-expenses');
+                textarea.value = fixedExpenses.map(e => `${e.name},${e.amount},${e.freq}`).join('\n');
             }
 
             function createVariableExpenseRow(name = '', budget = '') {
@@ -422,6 +406,14 @@
                 document.getElementById('input-combined-income').value = emmaIncome + jordanIncome;
             }
 
+            function populateSavingsGoalInputs(savingsGoal) {
+                document.getElementById('input-savings-current').value = savingsGoal.current;
+                document.getElementById('input-savings-target').value = savingsGoal.target;
+                document.getElementById('input-weekly-contribution').value = savingsGoal.weeklyContribution;
+                document.getElementById('input-savings-start-date').value = savingsGoal.startDate || new Date().toISOString().split('T')[0];
+            }
+
+
             function parseInputData() {
                 const parsed = {};
 
@@ -429,7 +421,6 @@
                     emma: parseFloat(document.getElementById('input-emma-income').value) || 0,
                     jordan: parseFloat(document.getElementById('input-jordan-income').value) || 0
                 };
-                // Calculate combined income directly from Emma's and Jordan's
                 parsed.income.combined = parsed.income.emma + parsed.income.jordan;
                 console.log('Parsed Income:', parsed.income);
 
@@ -442,20 +433,19 @@
                 };
                 console.log('Parsed Savings Goal:', parsed.savingsGoal);
 
+                // Parse Fixed Expenses from textarea
                 parsed.fixedExpenses = [];
-                document.querySelectorAll('.fixed-expense-row').forEach(rowDiv => {
-                    const nameInput = rowDiv.querySelector('.fixed-expense-name');
-                    const amountInput = rowDiv.querySelector('.fixed-expense-amount');
-                    const freqInput = rowDiv.querySelector('.fixed-expense-freq');
-
-                    const name = nameInput ? nameInput.value.trim() : '';
-                    const amount = amountInput ? parseFloat(amountInput.value) : NaN;
-                    const freq = freqInput ? freqInput.value : 'Weekly';
-
-                    if (name && !isNaN(amount) && amount >= 0) { 
-                        parsed.fixedExpenses.push({ name, amount, freq });
-                    } else if (name || !isNaN(amount)) { 
-                        console.warn('Skipping partially filled/invalid fixed expense row:', { name, amount, freq });
+                const fixedExpensesText = document.getElementById('input-fixed-expenses').value;
+                fixedExpensesText.split('\n').forEach(line => {
+                    const parts = line.split(',').map(part => part.trim());
+                    if (parts.length === 3 && parts[0] && !isNaN(parseFloat(parts[1])) && parts[2]) {
+                        parsed.fixedExpenses.push({
+                            name: parts[0],
+                            amount: parseFloat(parts[1]),
+                            freq: parts[2]
+                        });
+                    } else if (line.trim() !== '') {
+                        console.warn('Skipping malformed fixed expense line:', line);
                     }
                 });
                 console.log('Parsed Fixed Expenses:', parsed.fixedExpenses);
@@ -484,6 +474,7 @@
                 currentData = dataToUse; 
 
                 const processed = {
+                    // Re-process fixed expenses to weekly from parsed 'amount' and 'freq'
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({...e, weekly: getWeeklyAmount(e.amount, e.freq)})),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
                     get totalVariableWeekly() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); },
@@ -491,7 +482,6 @@
                 };
                 console.log('Processed totals:', processed);
 
-                // Dynamically calculate shares based on current income values
                 const emmaShare = currentData.income.combined > 0 ? currentData.income.emma / currentData.income.combined : 0.5;
                 const jordanShare = currentData.income.combined > 0 ? currentData.income.jordan / currentData.income.combined : 0.5;
                 
@@ -541,7 +531,7 @@
                 console.log('Fixed Expenses Table Updated');
 
                 const allExpenseCategories = [
-                    ...processed.fixedExpensesWeekly,
+                    ...processed.fixedExpensesWeekly, 
                     ...currentData.variableExpenses.map(v => ({ name: v.name, weekly: v.budget }))
                 ];
                 const expenseCategoriesForChart = allExpenseCategories
@@ -799,15 +789,13 @@
                 });
             });
 
-            document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
-                createFixedExpenseRow();
-            });
+            // Removed add-fixed-expense-button listener
+            // Removed createFixedExpenseRow and populateFixedExpensesInputs (individual rows)
 
             document.getElementById('add-variable-expense-button').addEventListener('click', () => {
                 createVariableExpenseRow();
             });
 
-            // Listen for input changes on Emma's and Jordan's salaries to update combined
             document.getElementById('input-emma-income').addEventListener('input', updateCombinedIncomeInput);
             document.getElementById('input-jordan-income').addEventListener('input', updateCombinedIncomeInput);
 
@@ -819,10 +807,10 @@
             });
 
             // Initial render: Populate input fields and then process/render dashboard
-            populateFixedExpensesInputs(defaultData.fixedExpenses);
+            populateFixedExpensesInputTextarea(defaultData.fixedExpenses); // Populate textarea
             populateVariableExpensesInputs(defaultData.variableExpenses); 
+            populateSavingsGoalInputs(defaultData.savingsGoal); 
             
-            // Set initial combined income based on default Emma and Jordan salaries
             updateCombinedIncomeInput(); 
             processAndRenderData(defaultData);
         });
