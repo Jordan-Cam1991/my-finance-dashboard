@@ -144,7 +144,8 @@
                                 <table class="w-full text-sm text-left">
                                     <thead class="bg-slate-100 text-slate-600">
                                         <tr>
-                                            <th class="p-3 font-semibold">Expense</th>
+                                            <th class="p-3 font-semibold">Category</th>
+                                            <th class="p-3 font-semibold">Provider</th>
                                             <th class="p-3 font-semibold text-right">Weekly Cost</th>
                                         </tr>
                                     </thead>
@@ -320,25 +321,25 @@
                     combined: 3188 
                 },
                 fixedExpenses: [
-                    { name: 'Spotify', amount: 5, freq: 'Weekly' },
-                    { name: 'Internet', amount: 24, freq: 'Monthly' },
-                    { name: 'Mobile', amount: 36.5, freq: 'Monthly' },
-                    { name: 'Tolls', amount: 36, freq: 'Weekly' },
-                    { name: 'Car Repayment', amount: 100, freq: 'Monthly' },
-                    { name: 'Emma Car Insurance', amount: 52, freq: 'Monthly' },
-                    { name: 'Jordan Car Insurance', amount: 22, freq: 'Yearly' },
-                    { name: 'Water', amount: 40, freq: 'Quarterly' },
-                    { name: 'Electricity', amount: 80, freq: 'Quarterly' },
-                    { name: 'Solar', amount: 40, freq: 'Monthly' },
-                    { name: 'Rates', amount: 80, freq: 'Quarterly' },
-                    { name: 'Mortgage', amount: 1211, freq: 'Fortnightly' },
-                    { name: 'Petrol', amount: 40, freq: 'Weekly' },
-                    { name: 'Health Care', amount: 83, freq: 'Monthly' }, 
-                    { name: 'Gas', amount: 10, freq: 'Quarterly' },
-                    { name: 'Netflix', amount: 3, freq: 'Monthly' },
-                    { name: 'Kayo', amount: 10, freq: 'Monthly' },
-                    { name: 'Home Insurance', amount: 36, freq: 'Yearly' },
-                    { name: 'Cat Food / Litter', amount: 45, freq: 'Monthly' }
+                    { category: 'Streaming', provider: 'Spotify', amount: 5, freq: 'Weekly' },
+                    { category: 'Internet', provider: 'Telstra', amount: 24, freq: 'Monthly' },
+                    { category: 'Mobile', provider: 'Optus', amount: 36.5, freq: 'Monthly' },
+                    { category: 'Transport', provider: 'Tolls', amount: 36, freq: 'Weekly' },
+                    { category: 'Loan', provider: 'Car Repayment', amount: 100, freq: 'Monthly' },
+                    { category: 'Insurance', provider: 'Emma Car Insurance', amount: 52, freq: 'Monthly' },
+                    { category: 'Insurance', provider: 'Jordan Car Insurance', amount: 22, freq: 'Yearly' },
+                    { category: 'Utilities', provider: 'Water', amount: 40, freq: 'Quarterly' },
+                    { category: 'Utilities', provider: 'Electricity', amount: 80, freq: 'Quarterly' },
+                    { category: 'Utilities', provider: 'Solar', amount: 40, freq: 'Monthly' },
+                    { category: 'Housing', provider: 'Rates', amount: 80, freq: 'Quarterly' },
+                    { category: 'Housing', provider: 'Mortgage', amount: 1211, freq: 'Fortnightly' },
+                    { category: 'Transport', provider: 'Petrol', amount: 40, freq: 'Weekly' },
+                    { category: 'Health', provider: 'Health Care', amount: 83, freq: 'Monthly' }, 
+                    { category: 'Utilities', provider: 'Gas', amount: 10, freq: 'Quarterly' },
+                    { category: 'Streaming', provider: 'Netflix', amount: 3, freq: 'Monthly' },
+                    { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Monthly' },
+                    { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Yearly' },
+                    { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Monthly' }
                 ],
                 variableExpenses: [
                     { name: 'Groceries', budget: 300 },
@@ -363,7 +364,7 @@
             };
 
 
-            let jordanBarChart, emmaBarChart, expensesBarChart, savingsLineChart; // Changed chart names
+            let jordanBarChart, emmaBarChart, expensesBarChart, savingsLineChart; 
 
             function updateRowWeeklyDisplay(rowDiv) {
                 const amountInput = rowDiv.querySelector('.fixed-expense-amount');
@@ -376,15 +377,21 @@
                 weeklyDisplay.textContent = formatCurrency(weeklyValue);
             }
 
-            function createFixedExpenseRow(name = '', amount = '', freq = 'Weekly') {
+            // Updated to include 'category' and 'provider'
+            function createFixedExpenseRow(category = '', provider = '', amount = '', freq = 'Weekly') {
                 const container = document.getElementById('fixed-expenses-inputs-container');
                 const rowDiv = document.createElement('div');
-                rowDiv.className = 'fixed-expense-row grid grid-cols-1 sm:grid-cols-4 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
+                // Adjusted grid-cols to 5 (Category, Provider, Amount, Frequency, Weekly Cost/Remove)
+                rowDiv.className = 'fixed-expense-row grid grid-cols-1 sm:grid-cols-5 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
 
                 rowDiv.innerHTML = `
                     <div>
-                        <label class="form-label text-sm">Name</label>
-                        <input type="text" class="form-input text-sm fixed-expense-name" placeholder="e.g. Spotify" value="${name}">
+                        <label class="form-label text-sm">Category</label>
+                        <input type="text" class="form-input text-sm fixed-expense-category" placeholder="e.g. Utilities" value="${category}">
+                    </div>
+                    <div>
+                        <label class="form-label text-sm">Provider</label>
+                        <input type="text" class="form-input text-sm fixed-expense-provider" placeholder="e.g. Spotify" value="${provider}">
                     </div>
                     <div>
                         <label class="form-label text-sm">Amount</label>
@@ -426,7 +433,8 @@
                     }
                 } else {
                     fixedExpenses.forEach(expense => {
-                        createFixedExpenseRow(expense.name, expense.amount, expense.freq);
+                        // Pass category and provider
+                        createFixedExpenseRow(expense.category, expense.provider, expense.amount, expense.freq);
                     });
                 }
             }
@@ -524,18 +532,20 @@
 
                 parsed.fixedExpenses = [];
                 document.querySelectorAll('.fixed-expense-row').forEach(rowDiv => {
-                    const nameInput = rowDiv.querySelector('.fixed-expense-name');
+                    const categoryInput = rowDiv.querySelector('.fixed-expense-category'); // New
+                    const providerInput = rowDiv.querySelector('.fixed-expense-provider'); // New
                     const amountInput = rowDiv.querySelector('.fixed-expense-amount');
                     const freqSelect = rowDiv.querySelector('.fixed-expense-freq');
 
-                    const name = nameInput ? nameInput.value.trim() : '';
+                    const category = categoryInput ? categoryInput.value.trim() : ''; // New
+                    const provider = providerInput ? providerInput.value.trim() : ''; // New
                     const amount = amountInput ? parseFloat(amountInput.value) : NaN;
                     const freq = freqSelect ? freqSelect.value : 'Weekly';
 
-                    if (name && !isNaN(amount) && amount >= 0) { 
-                        parsed.fixedExpenses.push({ name, amount, freq }); 
-                    } else if (name || !isNaN(amount)) { 
-                        console.warn('Skipping partially filled/invalid fixed expense row:', { name, amount, freq });
+                    if (category && provider && !isNaN(amount) && amount >= 0) { // Check for category and provider
+                        parsed.fixedExpenses.push({ category, provider, amount, freq }); // Store new fields
+                    } else if (category || provider || !isNaN(amount)) { 
+                        console.warn('Skipping partially filled/invalid fixed expense row:', { category, provider, amount, freq });
                     }
                 });
                 console.log('Parsed Fixed Expenses:', parsed.fixedExpenses);
@@ -564,7 +574,12 @@
                 currentData = dataToUse; 
 
                 const processed = {
-                    fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({...e, weekly: getWeeklyAmount(e.amount, e.freq)})),
+                    // Fixed expenses now have category and provider, but still map to weekly cost
+                    fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
+                        category: e.category, 
+                        provider: e.provider, 
+                        weekly: getWeeklyAmount(e.amount, e.freq)
+                    })),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
                     get totalVariableWeekly() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); },
                     get totalExpensesWeekly() { return this.totalFixedWeekly + this.totalVariableWeekly; },
@@ -600,7 +615,6 @@
                 document.getElementById('emma-savings').textContent = formatCurrency(emmaSavingsContribution);
                 document.getElementById('emma-disposable').textContent = formatCurrency(emmaDisposable);
 
-                // Updated chart calls to new bar chart function
                 updateIndividualSummaryBarChart('jordanChart', ['Expenses', 'Savings', 'Disposable'], [jordanExpenses, jordanSavingsContribution, Math.max(0, jordanDisposable)]);
                 updateIndividualSummaryBarChart('emmaChart', ['Expenses', 'Savings', 'Disposable'], [emmaExpenses, emmaSavingsContribution, Math.max(0, emmaDisposable)]);
                 console.log('Weekly Breakdown Charts Updated');
@@ -612,7 +626,8 @@
                     .forEach(e => {
                         const row = `
                             <tr class="border-b border-slate-100">
-                                <td class="p-3">${e.name}</td>
+                                <td class="p-3">${e.category}</td>
+                                <td class="p-3">${e.provider}</td>
                                 <td class="p-3 text-right font-semibold">${formatCurrency(e.weekly)}</td>
                             </tr>
                         `;
@@ -620,14 +635,23 @@
                     });
                 console.log('Fixed Expenses Table Updated');
 
+                // Expense categories for chart should now use 'category' from fixed expenses
                 const allExpenseCategories = [
-                    ...processed.fixedExpensesWeekly, 
+                    ...processed.fixedExpensesWeekly.map(e => ({ name: e.category, weekly: e.weekly })), // Use category
                     ...currentData.variableExpenses.map(v => ({ name: v.name, weekly: v.budget }))
                 ];
-                const expenseCategoriesForChart = allExpenseCategories
+                // Aggregate weekly costs by category for the bar chart
+                const aggregatedCategories = allExpenseCategories.reduce((acc, item) => {
+                    acc[item.name] = (acc[item.name] || 0) + item.weekly;
+                    return acc;
+                }, {});
+
+                const expenseCategoriesForChart = Object.entries(aggregatedCategories)
+                    .map(([name, weekly]) => ({ name, weekly }))
                     .filter(e => e.weekly && e.weekly > 0)
                     .sort((a, b) => b.weekly - a.weekly)
-                    .slice(0, 7);
+                    .slice(0, 7); // Still show top 7 categories
+
                 console.log('Expense Categories for Bar Chart:', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
                 updateBarChart('expensesBarChart', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
                 console.log('Expenses Bar Chart Updated');
@@ -696,7 +720,6 @@
                 maintainAspectRatio: false,
             };
 
-            // New function for individual summary bar charts
             function updateIndividualSummaryBarChart(canvasId, labels, data) {
                 console.log('Attempting to update individual summary bar chart:', canvasId);
                 const ctx = document.getElementById(canvasId).getContext('2d');
@@ -710,8 +733,8 @@
                 }
 
                 let chartInstance;
-                if (canvasId === 'jordanChart') chartInstance = jordanBarChart; // Use jordanBarChart
-                if (canvasId === 'emmaChart') chartInstance = emmaBarChart;     // Use emmaBarChart
+                if (canvasId === 'jordanChart') chartInstance = jordanBarChart; 
+                if (canvasId === 'emmaChart') chartInstance = emmaBarChart;     
 
                 if (chartInstance) {
                     console.log('Destroying existing individual summary bar chart instance:', canvasId);
@@ -720,20 +743,19 @@
 
                 try {
                     const newChart = new Chart(ctx, {
-                        type: 'bar', // Changed to 'bar'
+                        type: 'bar', 
                         data: {
                             labels: labels,
                             datasets: [{
                                 label: 'Amount',
                                 data: data,
-                                // Assign colors based on index for consistency (Expenses, Savings, Disposable)
                                 backgroundColor: ['#ef4444', '#3b82f6', '#64748b'], 
                                 borderRadius: 4,
                             }]
                         },
                         options: {
                             ...chartDefaults,
-                            indexAxis: 'y', // Make it a horizontal bar chart
+                            indexAxis: 'y', 
                             scales: {
                                 x: {
                                     beginAtZero: true,
@@ -742,7 +764,6 @@
                                     }
                                 },
                                 y: {
-                                    // Ensure labels are fully visible
                                     autoSkip: false,
                                     maxRotation: 0,
                                     minRotation: 0
