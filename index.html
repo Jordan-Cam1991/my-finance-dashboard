@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Financial Dashboard</title>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase objects globally for use in the main script block
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            setDoc,
+            onSnapshot
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,9 +80,54 @@
             min-height: 120px;
             resize: vertical;
         }
+        /* Spinner CSS */
+        .spinner-border {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: -0.125em;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            -webkit-animation: .75s linear infinite spinner-border;
+            animation: .75s linear infinite spinner-border;
+        }
+        @-webkit-keyframes spinner-border {
+            to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+        }
+        @keyframes spinner-border {
+            to { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+        }
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0,0,0,0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(255, 255, 255, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
+
+    <div id="loading-overlay">
+        <div class="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full border-indigo-500 border-r-transparent" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="ml-3 text-lg text-indigo-700">Loading data...</p>
+    </div>
 
     <div class="container mx-auto p-4 md:p-8">
         
@@ -121,7 +185,7 @@
                                 <li class="flex justify-between items-center"><span class="font-medium">Total Fixed Expenses:</span> <span class="font-semibold text-red-600" id="combined-fixed-expenses"></span></li>
                                 <li class="flex justify-between items-center"><span class="font-medium">Total Variable Budget:</span> <span class="font-semibold text-orange-600" id="combined-variable-budget"></span></li>
                                 <li class="flex flex-col"> <!-- Changed to flex-col to stack items -->
-                                    <div class="flex justify-between items-center"> <!-- This div keeps the label and total aligned -->
+                                    <div class="flex justify-between items-center w-full"> <!-- Added w-full for proper spacing -->
                                         <span class="font-medium">Total Actual Variable Spending:</span> 
                                         <span class="font-semibold text-orange-700" id="combined-actual-variable-spending"></span>
                                     </div>
@@ -264,7 +328,7 @@
                                 <input type="number" id="input-savings-target" class="form-input" value="30000">
                             </div>
                             <div class="mb-4">
-                                <label for="input-weekly-contribution" class="form-label">Weekly Contribution</label>
+                                <label for="input-weekly-contribution" class="form-label">Weekly Contribution</labeL>
                                 <input type="number" id="input-weekly-contribution" class="form-input" value="700">
                             </div>
                             <div class="mb-0">
@@ -349,7 +413,15 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Firebase setup
+            const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot } = window.firebase;
+            
+            let db, auth, userId;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
             const formatCurrency = (value) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
             const formatDate = (date) => {
                 if (!(date instanceof Date) || isNaN(date)) {
@@ -397,8 +469,8 @@
                     { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Monthly' },
                     { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Yearly' },
                     { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Monthly' },
-                    { category: 'Health', provider: 'Gym', amount: 35, freq: 'Weekly' }, // Moved from variable expenses
-                    { category: 'Charity', provider: 'Charity', amount: 10, freq: 'Weekly' } // Moved from variable expenses
+                    { category: 'Health', provider: 'Gym', amount: 35, freq: 'Weekly' }, 
+                    { category: 'Charity', provider: 'Charity', amount: 10, freq: 'Weekly' } 
                 ],
                 variableExpenses: [
                     { name: 'Groceries', budget: 300 },
@@ -413,8 +485,8 @@
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900, // This will now be dynamically calculated
-                    initialCurrent: 21900, // Store initial value for recalculations
+                    current: 21900, 
+                    initialCurrent: 21900, 
                     target: 30000,
                     weeklyContribution: 700,
                     actualSavingsLog: [],
@@ -425,6 +497,22 @@
 
 
             let combinedWeeklyChart, expensesBarChart, savingsLineChart; 
+
+            async function saveData(data) {
+                if (!db || !userId) {
+                    console.error("Firestore not initialized or user not authenticated. Cannot save data.");
+                    return;
+                }
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
+                    // Ensure data is plain object for Firestore
+                    const dataToSave = JSON.parse(JSON.stringify(data)); 
+                    await setDoc(docRef, dataToSave);
+                    console.log("Data successfully saved to Firestore!");
+                } catch (error) {
+                    console.error("Error saving data to Firestore:", error);
+                }
+            }
 
             function updateRowWeeklyDisplay(rowDiv) {
                 const amountInput = rowDiv.querySelector('.fixed-expense-amount');
@@ -503,7 +591,6 @@
             }
 
             function populateSavingsGoalInputs(savingsGoal) {
-                // The 'current' field is now read-only and updated by JS
                 document.getElementById('input-savings-current').value = savingsGoal.current; 
                 document.getElementById('input-savings-target').value = savingsGoal.target;
                 document.getElementById('input-weekly-contribution').value = savingsGoal.weeklyContribution;
@@ -513,13 +600,12 @@
             function renderActualSavingsLog() {
                 const list = document.getElementById('actual-savings-list');
                 const noMessage = document.getElementById('no-actuals-message');
-                list.innerHTML = ''; // Clear existing list items
+                list.innerHTML = ''; 
 
                 if (!currentData.savingsGoal.actualSavingsLog || currentData.savingsGoal.actualSavingsLog.length === 0) {
                     noMessage.classList.remove('hidden');
                 } else {
                     noMessage.classList.add('hidden');
-                    // Sort descending by date for display (most recent first)
                     const sortedLogs = [...currentData.savingsGoal.actualSavingsLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
                     sortedLogs.forEach(entry => {
                         const li = document.createElement('li');
@@ -582,7 +668,6 @@
                 };
                 parsed.income.combined = parsed.income.emma + parsed.income.jordan;
 
-                // For savingsGoal, 'current' will be calculated, not directly parsed from input
                 parsed.savingsGoal = {
                     name: 'Custom Goal', 
                     startDate: document.getElementById('input-savings-start-date').value || new Date().toISOString().split('T')[0],
@@ -694,8 +779,8 @@
                 updateBarChart('expensesBarChart', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
 
                 const { current, target, weeklyContribution, startDate } = currentData.savingsGoal;
-                document.getElementById('savings-current-display').textContent = formatCurrency(current); // Update savings current display
-                document.getElementById('savings-target-display').textContent = formatCurrency(target); // Update savings target display
+                document.getElementById('savings-current-display').textContent = formatCurrency(current); 
+                document.getElementById('savings-target-display').textContent = formatCurrency(target); 
 
                 const progress = target > 0 ? (current / target) * 100 : 0;
                 const remaining = Math.max(0, target - current);
@@ -939,8 +1024,8 @@
             });
 
             document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
-                // Default new fixed expenses to 'Weekly'
                 createFixedExpenseRow('', '', '', 'Weekly'); 
+                saveData(currentData);
             });
 
             document.getElementById('add-actual-saving-button').addEventListener('click', () => {
@@ -953,14 +1038,13 @@
                 if (!isNaN(amount) && amount > 0) {
                     currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
                     currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    // The 'current' property is now updated by processAndRenderData based on all logs
-                    // currentData.savingsGoal.current += amount; 
-
+                    
                     actualAmountInput.value = '';
                     actualDateInput.value = '';
 
                     processAndRenderData(currentData);
                     renderActualSavingsLog(); 
+                    saveData(currentData);
                 } else {
                     console.warn('Invalid actual saving amount entered. Please enter a positive number.');
                 }
@@ -985,6 +1069,7 @@
 
                     processAndRenderData(currentData);
                     renderActualVariableSpendingLog();
+                    saveData(currentData);
                 } else {
                     console.warn('Invalid actual variable spending entry. Please fill in category and a positive amount.');
                 }
@@ -995,6 +1080,7 @@
                     currentData.actualVariableSpendingLog = [];
                     processAndRenderData(currentData);
                     renderActualVariableSpendingLog();
+                    saveData(currentData);
                     console.log('Actual variable spending log reset.');
                 }
             });
@@ -1011,8 +1097,6 @@
                 if (!isNaN(amount) && amount > 0 && reason) {
                     currentData.savingsGoal.actualSavingsUsedLog.push({ date: date, amount: amount, reason: reason });
                     currentData.savingsGoal.actualSavingsUsedLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    // The 'current' property is now updated by processAndRenderData based on all logs
-                    // currentData.savingsGoal.current -= amount; 
 
                     amountInput.value = '';
                     reasonInput.value = '';
@@ -1020,56 +1104,123 @@
 
                     processAndRenderData(currentData);
                     renderActualSavingsUsedLog();
+                    saveData(currentData);
                 } else {
                     console.warn('Invalid savings used entry. Please fill in amount, reason, and ensure amount is positive.');
                 }
             });
 
 
-            document.getElementById('input-emma-income').addEventListener('input', updateCombinedIncomeInput);
-            document.getElementById('input-jordan-income').addEventListener('input', updateCombinedIncomeInput);
+            document.getElementById('input-emma-income').addEventListener('input', () => {
+                updateCombinedIncomeInput();
+                saveData(currentData);
+            });
+            document.getElementById('input-jordan-income').addEventListener('input', () => {
+                updateCombinedIncomeInput();
+                saveData(currentData);
+            });
+            document.getElementById('input-savings-target').addEventListener('input', () => {
+                saveData(currentData);
+            });
+            document.getElementById('input-weekly-contribution').addEventListener('input', () => {
+                saveData(currentData);
+            });
+            document.getElementById('input-savings-start-date').addEventListener('change', () => { // Use change for date input
+                saveData(currentData);
+            });
 
 
             document.getElementById('update-dashboard-button').addEventListener('click', () => {
                 console.log('Update Dashboard button clicked');
                 const newData = parseInputData();
-                processAndRenderData(newData);
+                currentData = newData; // Update currentData with parsed form values
+                processAndRenderData(currentData);
+                saveData(currentData);
             });
 
-            // This function is no longer needed as the HTML structure is adjusted directly.
-            // function moveSavingsGoalSection() {
-            //     const savingsGoalDiv = document.querySelector('#data-input > div > div:nth-child(2)'); 
-            //     const targetLocation = document.getElementById('savings-goal-input-section');
-            //     if (savingsGoalDiv && targetLocation) {
-            //         const incomeSectionContainer = savingsGoalDiv.parentNode; 
-            //         const incomeDiv = incomeSectionContainer.querySelector('div:first-child'); 
 
-            //         const tempIncomePlaceholder = document.createElement('div');
-            //         incomeSectionContainer.insertBefore(tempIncomePlaceholder, incomeDiv);
-            //         incomeSectionContainer.removeChild(incomeDiv);
+            // Function to populate inputs and render dashboard from loaded data
+            function populateInputsAndRender(data) {
+                // Populate income inputs
+                document.getElementById('input-emma-income').value = data.income.emma;
+                document.getElementById('input-jordan-income').value = data.income.jordan;
+                updateCombinedIncomeInput(); // Recalculate combined based on individual inputs
 
-            //         targetLocation.parentNode.insertBefore(savingsGoalDiv, targetLocation.nextSibling); 
+                // Populate fixed expenses inputs
+                populateFixedExpensesInputs(data.fixedExpenses);
 
-            //         incomeSectionContainer.insertBefore(incomeDiv, tempIncomePlaceholder);
-            //         incomeSectionContainer.removeChild(tempIncomePlaceholder);
-            //     } else {
-            //         console.warn('Could not find savings goal section or target location for moving.');
-            //     }
-            // }
+                // Populate savings goal inputs (target, contribution, start date)
+                document.getElementById('input-savings-target').value = data.savingsGoal.target;
+                document.getElementById('input-weekly-contribution').value = data.savingsGoal.weeklyContribution;
+                document.getElementById('input-savings-start-date').value = data.savingsGoal.startDate;
 
+                // Process and render all dashboard sections based on the loaded data
+                processAndRenderData(data);
+                renderActualSavingsLog();
+                renderActualSavingsUsedLog();
+                renderActualVariableSpendingLog();
+            }
 
-            // Initial render: Populate input fields and then process/render dashboard
-            populateFixedExpensesInputs(defaultData.fixedExpenses); 
-            // Don't call populateSavingsGoalInputs here, as its 'current' value is calculated by processAndRenderData
-            // populateSavingsGoalInputs(defaultData.savingsGoal); 
-            
-            updateCombinedIncomeInput(); 
-            processAndRenderData(defaultData); // This call will now also set currentData.savingsGoal.current and update the input
-            renderActualSavingsLog(); 
-            renderActualSavingsUsedLog(); 
-            renderActualVariableSpendingLog(); 
+            async function initializeFirebaseAndLoadData() {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
 
-            // moveSavingsGoalSection(); // This is no longer needed
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    userId = auth.currentUser.uid;
+                    console.log('Firebase initialized. User ID:', userId);
+
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
+                    onSnapshot(docRef, (docSnap) => {
+                        loadingOverlay.style.display = 'none'; // Hide loading indicator
+
+                        if (docSnap.exists()) {
+                            console.log("Current data from Firestore:", docSnap.data());
+                            const loadedData = docSnap.data();
+                            // Ensure logs are arrays (Firestore might save empty arrays as undefined/null if not handled)
+                            loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
+                            loadedData.savingsGoal.actualSavingsUsedLog = loadedData.savingsGoal.actualSavingsUsedLog || [];
+                            loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
+                            loadedData.fixedExpenses = loadedData.fixedExpenses || [];
+                            loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses; // Ensure variable expenses budget list is present
+
+                            // If initialCurrent is not set in DB, assume current (or default initial) is the base
+                            if (typeof loadedData.savingsGoal.initialCurrent === 'undefined' || loadedData.savingsGoal.initialCurrent === null) {
+                                loadedData.savingsGoal.initialCurrent = loadedData.savingsGoal.current || defaultData.savingsGoal.initialCurrent;
+                            }
+
+                            // Use the loaded data to populate and render
+                            populateInputsAndRender(loadedData);
+                        } else {
+                            console.log("No financial data found in Firestore, initializing with default data.");
+                            currentData = defaultData;
+                            populateInputsAndRender(currentData);
+                            saveData(currentData); // Save default data to Firestore for next time
+                        }
+                    }, (error) => {
+                        console.error("Error listening to document: ", error);
+                        loadingOverlay.style.display = 'none';
+                        // Fallback to default data if there's a Firestore error
+                        currentData = defaultData;
+                        populateInputsAndRender(currentData);
+                    });
+
+                } catch (error) {
+                    console.error("Error initializing Firebase or signing in:", error);
+                    loadingOverlay.style.display = 'none';
+                    // Fallback to default data if Firebase initialization fails
+                    currentData = defaultData;
+                    populateInputsAndRender(currentData);
+                }
+            }
+
+            initializeFirebaseAndLoadData();
         });
     </script>
 </body>
