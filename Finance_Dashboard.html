@@ -252,6 +252,34 @@
                             </button>
                         </div>
 
+                        <!-- New section for logging actual weekly savings -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Log Actual Weekly Savings</h3>
+                            <p class="text-sm text-slate-500 mb-4">Add the amount you actually saved this week to update your total progress.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
+                                <div>
+                                    <label for="input-weekly-actual-amount" class="form-label text-sm">Amount Saved This Week</label>
+                                    <input type="number" id="input-weekly-actual-amount" class="form-input text-sm" placeholder="e.g. 550">
+                                </div>
+                                <div>
+                                    <label for="input-weekly-actual-date" class="form-label text-sm">Date of Saving (Optional)</label>
+                                    <input type="date" id="input-weekly-actual-date" class="form-input text-sm">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" id="add-actual-saving-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
+                                        Log Saving
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="actual-savings-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
+                                <p class="text-center text-slate-400" id="no-actuals-message">No actual savings logged yet.</p>
+                                <ul id="actual-savings-list" class="space-y-1">
+                                    <!-- Logged entries will appear here -->
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- End new section -->
+
                         <button id="update-dashboard-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
                             Update Dashboard
                         </button>
@@ -327,14 +355,15 @@
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900,
+                    current: 21900, 
                     target: 30000,
-                    weeklyContribution: 700
+                    weeklyContribution: 700,
+                    actualSavingsLog: [] 
                 }
             };
 
 
-            let jordanDonutChart, emmaDonutChart, expensesBarChart, savingsLineChart;
+            let jordanBarChart, emmaBarChart, expensesBarChart, savingsLineChart; // Changed chart names
 
             function updateRowWeeklyDisplay(rowDiv) {
                 const amountInput = rowDiv.querySelector('.fixed-expense-amount');
@@ -350,7 +379,6 @@
             function createFixedExpenseRow(name = '', amount = '', freq = 'Weekly') {
                 const container = document.getElementById('fixed-expenses-inputs-container');
                 const rowDiv = document.createElement('div');
-                // Updated grid-cols for new structure
                 rowDiv.className = 'fixed-expense-row grid grid-cols-1 sm:grid-cols-4 gap-4 mb-3 items-end p-3 border border-slate-200 rounded-md bg-slate-50';
 
                 rowDiv.innerHTML = `
@@ -386,8 +414,7 @@
                     rowDiv.remove();
                 });
 
-                // Initial update for the new row
-                updateRowWeeklyDisplay(rowDiv);
+                updateRowWeeklyDisplay(rowDiv); // Initial update for the new row
             }
 
             function populateFixedExpensesInputs(fixedExpenses) {
@@ -450,10 +477,28 @@
             }
 
             function populateSavingsGoalInputs(savingsGoal) {
-                document.getElementById('input-savings-current').value = savingsGoal.current;
                 document.getElementById('input-savings-target').value = savingsGoal.target;
                 document.getElementById('input-weekly-contribution').value = savingsGoal.weeklyContribution;
                 document.getElementById('input-savings-start-date').value = savingsGoal.startDate || new Date().toISOString().split('T')[0];
+            }
+
+            function renderActualSavingsLog() {
+                const list = document.getElementById('actual-savings-list');
+                const noMessage = document.getElementById('no-actuals-message');
+                list.innerHTML = ''; // Clear existing list items
+
+                if (!currentData.savingsGoal.actualSavingsLog || currentData.savingsGoal.actualSavingsLog.length === 0) {
+                    noMessage.classList.remove('hidden');
+                } else {
+                    noMessage.classList.add('hidden');
+                    // Sort descending by date for display (most recent first)
+                    const sortedLogs = [...currentData.savingsGoal.actualSavingsLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
+                    sortedLogs.forEach(entry => {
+                        const li = document.createElement('li');
+                        li.textContent = `${formatDate(new Date(entry.date))}: ${formatCurrency(entry.amount)}`;
+                        list.appendChild(li);
+                    });
+                }
             }
 
 
@@ -472,7 +517,8 @@
                     startDate: document.getElementById('input-savings-start-date').value || new Date().toISOString().split('T')[0],
                     current: parseFloat(document.getElementById('input-savings-current').value) || 0,
                     target: parseFloat(document.getElementById('input-savings-target').value) || 0,
-                    weeklyContribution: parseFloat(document.getElementById('input-weekly-contribution').value) || 0
+                    weeklyContribution: parseFloat(document.getElementById('input-weekly-contribution').value) || 0,
+                    actualSavingsLog: currentData.savingsGoal.actualSavingsLog || [] 
                 };
                 console.log('Parsed Savings Goal:', parsed.savingsGoal);
 
@@ -486,7 +532,6 @@
                     const amount = amountInput ? parseFloat(amountInput.value) : NaN;
                     const freq = freqSelect ? freqSelect.value : 'Weekly';
 
-                    // Store original amount and frequency for full data context
                     if (name && !isNaN(amount) && amount >= 0) { 
                         parsed.fixedExpenses.push({ name, amount, freq }); 
                     } else if (name || !isNaN(amount)) { 
@@ -519,7 +564,6 @@
                 currentData = dataToUse; 
 
                 const processed = {
-                    // Fixed expenses need to be converted to weekly here for calculations
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({...e, weekly: getWeeklyAmount(e.amount, e.freq)})),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
                     get totalVariableWeekly() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); },
@@ -556,8 +600,9 @@
                 document.getElementById('emma-savings').textContent = formatCurrency(emmaSavingsContribution);
                 document.getElementById('emma-disposable').textContent = formatCurrency(emmaDisposable);
 
-                updateDonutChart('jordanChart', [jordanExpenses, jordanSavingsContribution, Math.max(0, jordanDisposable)]);
-                updateDonutChart('emmaChart', [emmaExpenses, emmaSavingsContribution, Math.max(0, emmaDisposable)]);
+                // Updated chart calls to new bar chart function
+                updateIndividualSummaryBarChart('jordanChart', ['Expenses', 'Savings', 'Disposable'], [jordanExpenses, jordanSavingsContribution, Math.max(0, jordanDisposable)]);
+                updateIndividualSummaryBarChart('emmaChart', ['Expenses', 'Savings', 'Disposable'], [emmaExpenses, emmaSavingsContribution, Math.max(0, emmaDisposable)]);
                 console.log('Weekly Breakdown Charts Updated');
 
                 const tableBody = document.getElementById('fixed-expenses-table');
@@ -592,11 +637,11 @@
                 const remaining = Math.max(0, target - current);
                 const weeksNeeded = weeklyContribution > 0 ? remaining / weeklyContribution : (remaining > 0 ? Infinity : 0);
                 
-                const eta = new Date(startDate);
+                const eta = new Date(); 
                 if (isFinite(weeksNeeded)) {
-                    eta.setDate(new Date(startDate).getDate() + (weeksNeeded * 7));
+                    eta.setDate(eta.getDate() + (weeksNeeded * 7));
                 } else {
-                    eta.setTime(0);
+                    eta.setTime(0); 
                 }
 
                 document.getElementById('progress-bar').style.width = `${Math.min(100, Math.round(progress))}%`;
@@ -609,25 +654,24 @@
                 
                 const projectionLabels = [];
                 const projectionData = [];
-                let balance = current;
-                let currentProjectionDate = new Date(startDate);
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                if (currentProjectionDate < today) {
-                    currentProjectionDate = new Date(today);
-                    balance = current; 
-                } else {
-                    balance = current;
-                }
+
+                const chartStartDate = new Date();
+                projectionLabels.push(formatDate(chartStartDate));
+                projectionData.push(current); 
 
                 let weekCount = 0;
+                let currentProjBalance = current;
+                let currentProjDate = new Date(chartStartDate); 
+
                 const maxWeeksToProject = 52 * 2; 
-                while (weekCount < maxWeeksToProject && (balance < target * 1.1 || weekCount < 20)) {
-                    projectionLabels.push(formatDate(currentProjectionDate));
-                    projectionData.push(balance);
+
+                while (weekCount < maxWeeksToProject && (currentProjBalance < target * 1.1 || weekCount < 20)) {
+                    currentProjBalance += weeklyContribution;
+                    currentProjDate.setDate(currentProjDate.getDate() + 7);
                     
-                    balance += weeklyContribution;
-                    currentProjectionDate.setDate(currentProjectionDate.getDate() + 7);
+                    projectionLabels.push(formatDate(currentProjDate));
+                    projectionData.push(currentProjBalance);
+                    
                     weekCount++;
                 }
 
@@ -652,8 +696,9 @@
                 maintainAspectRatio: false,
             };
 
-            function updateDonutChart(canvasId, chartData) {
-                console.log('Attempting to update donut chart:', canvasId);
+            // New function for individual summary bar charts
+            function updateIndividualSummaryBarChart(canvasId, labels, data) {
+                console.log('Attempting to update individual summary bar chart:', canvasId);
                 const ctx = document.getElementById(canvasId).getContext('2d');
                 if (!ctx) {
                     console.error('Canvas context not found for:', canvasId);
@@ -665,33 +710,51 @@
                 }
 
                 let chartInstance;
-                if (canvasId === 'jordanChart') chartInstance = jordanDonutChart;
-                if (canvasId === 'emmaChart') chartInstance = emmaDonutChart;
+                if (canvasId === 'jordanChart') chartInstance = jordanBarChart; // Use jordanBarChart
+                if (canvasId === 'emmaChart') chartInstance = emmaBarChart;     // Use emmaBarChart
 
                 if (chartInstance) {
-                    console.log('Destroying existing donut chart instance:', canvasId);
+                    console.log('Destroying existing individual summary bar chart instance:', canvasId);
                     chartInstance.destroy();
                 }
 
                 try {
                     const newChart = new Chart(ctx, {
-                        type: 'doughnut',
+                        type: 'bar', // Changed to 'bar'
                         data: {
-                            labels: ['Expenses', 'Savings', 'Disposable'],
+                            labels: labels,
                             datasets: [{
-                                data: chartData,
-                                backgroundColor: ['#ef4444', '#3b82f6', '#64748b'],
-                                borderColor: '#ffffff',
-                                borderWidth: 4,
+                                label: 'Amount',
+                                data: data,
+                                // Assign colors based on index for consistency (Expenses, Savings, Disposable)
+                                backgroundColor: ['#ef4444', '#3b82f6', '#64748b'], 
+                                borderRadius: 4,
                             }]
                         },
-                        options: { ...chartDefaults }
+                        options: {
+                            ...chartDefaults,
+                            indexAxis: 'y', // Make it a horizontal bar chart
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => formatCurrency(value),
+                                    }
+                                },
+                                y: {
+                                    // Ensure labels are fully visible
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    minRotation: 0
+                                }
+                            }
+                        }
                     });
-                    if (canvasId === 'jordanChart') jordanDonutChart = newChart;
-                    if (canvasId === 'emmaChart') emmaDonutChart = newChart;
-                    console.log('Donut chart updated/created:', canvasId, newChart);
+                    if (canvasId === 'jordanChart') jordanBarChart = newChart;
+                    if (canvasId === 'emmaChart') emmaBarChart = newChart;
+                    console.log('Individual summary bar chart updated/created:', canvasId, newChart);
                 } catch (error) {
-                    console.error('Error creating/updating donut chart:', canvasId, error);
+                    console.error('Error creating/updating individual summary bar chart:', canvasId, error);
                 }
             }
             
@@ -842,6 +905,35 @@
                 createVariableExpenseRow();
             });
 
+            document.getElementById('add-actual-saving-button').addEventListener('click', () => {
+                const actualAmountInput = document.getElementById('input-weekly-actual-amount');
+                const actualDateInput = document.getElementById('input-weekly-actual-date');
+                
+                const amount = parseFloat(actualAmountInput.value);
+                const date = actualDateInput.value || new Date().toISOString().split('T')[0]; // Default to today if not set
+
+                if (!isNaN(amount) && amount > 0) {
+                    // Add to log
+                    currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
+                    // Sort log ascending by date (older to newer) for processing
+                    currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    // Update the 'current' savings directly in the data model
+                    currentData.savingsGoal.current = (currentData.savingsGoal.current || defaultData.savingsGoal.current) + amount; // Add to current base or existing total
+
+                    // Clear the actual saving inputs
+                    actualAmountInput.value = '';
+                    actualDateInput.value = '';
+
+                    // Re-render everything to show the updated progress
+                    processAndRenderData(currentData);
+                    renderActualSavingsLog(); // Update the log display immediately
+                } else {
+                    console.warn('Invalid actual saving amount entered. Please enter a positive number.');
+                }
+            });
+
+
             document.getElementById('input-emma-income').addEventListener('input', updateCombinedIncomeInput);
             document.getElementById('input-jordan-income').addEventListener('input', updateCombinedIncomeInput);
 
@@ -853,12 +945,13 @@
             });
 
             // Initial render: Populate input fields and then process/render dashboard
-            populateFixedExpensesInputs(defaultData.fixedExpenses); // Populate individual fixed expense rows
+            populateFixedExpensesInputs(defaultData.fixedExpenses); 
             populateVariableExpensesInputs(defaultData.variableExpenses); 
             populateSavingsGoalInputs(defaultData.savingsGoal); 
             
             updateCombinedIncomeInput(); 
             processAndRenderData(defaultData);
+            renderActualSavingsLog(); 
         });
     </script>
 </body>
