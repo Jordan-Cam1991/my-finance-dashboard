@@ -494,8 +494,7 @@
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900, 
-                    initialCurrent: 21900, 
+                    current: 21900, // This is the starting amount if no data is loaded
                     target: 30000,
                     weeklyContribution: 700,
                     actualSavingsLog: [],
@@ -680,6 +679,8 @@
                 parsed.savingsGoal = {
                     name: 'Custom Goal', 
                     startDate: document.getElementById('input-savings-start-date').value || new Date().toISOString().split('T')[0],
+                    // current will be maintained by add/remove savings functions
+                    current: currentData.savingsGoal.current, 
                     target: parseFloat(document.getElementById('input-savings-target').value) || 0,
                     weeklyContribution: parseFloat(document.getElementById('input-weekly-contribution').value) || 0,
                     actualSavingsLog: currentData.savingsGoal.actualSavingsLog || [],
@@ -714,10 +715,7 @@
             function processAndRenderData(dataToUse) {
                 currentData = dataToUse; 
 
-                // Recalculate current savings based on initial and logs
-                const loggedSavingsSum = currentData.savingsGoal.actualSavingsLog.reduce((sum, e) => sum + e.amount, 0);
-                const usedSavingsSum = currentData.savingsGoal.actualSavingsUsedLog.reduce((sum, e) => sum + e.amount, 0);
-                currentData.savingsGoal.current = defaultData.savingsGoal.initialCurrent + loggedSavingsSum - usedSavingsSum;
+                // Current savings is no longer recalculated here; it's maintained by log actions.
                 document.getElementById('input-savings-current').value = currentData.savingsGoal.current; // Update the readonly input
 
                 const processed = {
@@ -1047,11 +1045,12 @@
                 if (!isNaN(amount) && amount > 0) {
                     currentData.savingsGoal.actualSavingsLog.push({ date: date, amount: amount });
                     currentData.savingsGoal.actualSavingsLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    currentData.savingsGoal.current += amount; // Directly update the current value here
                     
                     actualAmountInput.value = '';
                     actualDateInput.value = '';
 
-                    processAndRenderData(currentData);
+                    processAndRenderData(currentData); // This will just re-render, not recalculate current
                     renderActualSavingsLog(); 
                     saveData(currentData);
                 } else {
@@ -1106,6 +1105,7 @@
                 if (!isNaN(amount) && amount > 0 && reason) {
                     currentData.savingsGoal.actualSavingsUsedLog.push({ date: date, amount: amount, reason: reason });
                     currentData.savingsGoal.actualSavingsUsedLog.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    currentData.savingsGoal.current -= amount; // Directly update the current value here
 
                     amountInput.value = '';
                     reasonInput.value = '';
@@ -1162,9 +1162,10 @@
                 document.getElementById('input-savings-target').value = data.savingsGoal.target;
                 document.getElementById('input-weekly-contribution').value = data.savingsGoal.weeklyContribution;
                 document.getElementById('input-savings-start-date').value = data.savingsGoal.startDate;
+                document.getElementById('input-savings-current').value = data.savingsGoal.current; // Ensure readonly input is set
 
                 // Process and render all dashboard sections based on the loaded data
-                processAndRenderData(data);
+                processAndRenderData(data); // This will just re-render, not recalculate current savings base
                 renderActualSavingsLog();
                 renderActualSavingsUsedLog();
                 renderActualVariableSpendingLog();
@@ -1195,11 +1196,6 @@
                             loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
                             loadedData.fixedExpenses = loadedData.fixedExpenses || [];
                             loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses; // Ensure variable expenses budget list is present
-
-                            // If initialCurrent is not set in DB, assume current (or default initial) is the base
-                            if (typeof loadedData.savingsGoal.initialCurrent === 'undefined' || loadedData.savingsGoal.initialCurrent === null) {
-                                loadedData.savingsGoal.initialCurrent = loadedData.savingsGoal.current || defaultData.savingsGoal.initialCurrent;
-                            }
 
                             // Use the loaded data to populate and render
                             populateInputsAndRender(loadedData);
