@@ -494,7 +494,7 @@
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900, // This is the starting amount if no data is loaded
+                    current: 21900, // This is the default starting amount if NO data is loaded
                     target: 30000,
                     weeklyContribution: 700,
                     actualSavingsLog: [],
@@ -513,8 +513,9 @@
                 }
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
-                    // Ensure data is plain object for Firestore
+                    // Ensure data is plain object for Firestore and logs are valid
                     const dataToSave = JSON.parse(JSON.stringify(data)); 
+                    console.log("Saving data to Firestore. Current savings:", dataToSave.savingsGoal.current); // Log before saving
                     await setDoc(docRef, dataToSave);
                     console.log("Data successfully saved to Firestore!");
                 } catch (error) {
@@ -599,7 +600,7 @@
             }
 
             function populateSavingsGoalInputs(savingsGoal) {
-                document.getElementById('input-savings-current').value = savingsGoal.current; 
+                // 'current' field value is set by processAndRenderData based on currentData.savingsGoal.current
                 document.getElementById('input-savings-target').value = savingsGoal.target;
                 document.getElementById('input-weekly-contribution').value = savingsGoal.weeklyContribution;
                 document.getElementById('input-savings-start-date').value = savingsGoal.startDate || new Date().toISOString().split('T')[0];
@@ -679,8 +680,7 @@
                 parsed.savingsGoal = {
                     name: 'Custom Goal', 
                     startDate: document.getElementById('input-savings-start-date').value || new Date().toISOString().split('T')[0],
-                    // current will be maintained by add/remove savings functions
-                    current: currentData.savingsGoal.current, 
+                    current: currentData.savingsGoal.current, // Use the current value from currentData
                     target: parseFloat(document.getElementById('input-savings-target').value) || 0,
                     weeklyContribution: parseFloat(document.getElementById('input-weekly-contribution').value) || 0,
                     actualSavingsLog: currentData.savingsGoal.actualSavingsLog || [],
@@ -715,8 +715,8 @@
             function processAndRenderData(dataToUse) {
                 currentData = dataToUse; 
 
-                // Current savings is no longer recalculated here; it's maintained by log actions.
-                document.getElementById('input-savings-current').value = currentData.savingsGoal.current; // Update the readonly input
+                // Directly use currentData.savingsGoal.current for the input field
+                document.getElementById('input-savings-current').value = currentData.savingsGoal.current; 
 
                 const processed = {
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
@@ -1128,15 +1128,19 @@
                 updateCombinedIncomeInput();
                 saveData(currentData);
             });
+            // These inputs are handled by `parseInputData` on `update-dashboard-button` click for now.
+            // If you want them to trigger a save on every input, uncomment these:
+            /*
             document.getElementById('input-savings-target').addEventListener('input', () => {
                 saveData(currentData);
             });
             document.getElementById('input-weekly-contribution').addEventListener('input', () => {
                 saveData(currentData);
             });
-            document.getElementById('input-savings-start-date').addEventListener('change', () => { // Use change for date input
+            document.getElementById('input-savings-start-date').addEventListener('change', () => {
                 saveData(currentData);
             });
+            */
 
 
             document.getElementById('update-dashboard-button').addEventListener('click', () => {
@@ -1188,14 +1192,21 @@
                         loadingOverlay.style.display = 'none'; // Hide loading indicator
 
                         if (docSnap.exists()) {
-                            console.log("Current data from Firestore:", docSnap.data());
-                            const loadedData = docSnap.data();
-                            // Ensure logs are arrays (Firestore might save empty arrays as undefined/null if not handled)
+                            let loadedData = docSnap.data();
+                            console.log("Current data from Firestore. Current savings:", loadedData.savingsGoal.current); // Log loaded value
+
+                            // Ensure logs and arrays are valid
                             loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
                             loadedData.savingsGoal.actualSavingsUsedLog = loadedData.savingsGoal.actualSavingsUsedLog || [];
                             loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
                             loadedData.fixedExpenses = loadedData.fixedExpenses || [];
-                            loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses; // Ensure variable expenses budget list is present
+                            loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses; 
+                            
+                            // Ensure savingsGoal.current is a number, fall back to default if invalid
+                            if (typeof loadedData.savingsGoal.current !== 'number' || isNaN(loadedData.savingsGoal.current)) {
+                                loadedData.savingsGoal.current = defaultData.savingsGoal.current;
+                                console.warn("Loaded savingsGoal.current was invalid, falling back to default:", loadedData.savingsGoal.current);
+                            }
 
                             // Use the loaded data to populate and render
                             populateInputsAndRender(loadedData);
