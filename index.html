@@ -1012,26 +1012,8 @@
                 }
             }
 
-            // Function to attach all event listeners
-            function attachAllEventListeners() {
-                const tabs = document.querySelectorAll('.tab-button');
-                const panes = document.querySelectorAll('.tab-pane');
-
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        tabs.forEach(t => t.classList.remove('tab-active'));
-                        tab.classList.add('tab-active');
-
-                        panes.forEach(pane => {
-                            if (pane.id === tab.dataset.tab) {
-                                pane.classList.remove('hidden');
-                            } else {
-                                pane.classList.add('hidden');
-                            }
-                        });
-                    });
-                });
-
+            // Function to attach all event listeners that are dependent on Firebase
+            function attachFirebaseDependentEventListeners() {
                 document.getElementById('add-fixed-expense-button').addEventListener('click', () => {
                     createFixedExpenseRow('', '', '', 'Weekly'); 
                     saveData(currentData);
@@ -1177,6 +1159,26 @@
                 renderActualVariableSpendingLog();
             }
 
+            // Attach tab switching event listeners immediately on DOMContentLoaded
+            const tabs = document.querySelectorAll('.tab-button');
+            const panes = document.querySelectorAll('.tab-pane');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    tab.classList.add('tab-active');
+
+                    panes.forEach(pane => {
+                        if (pane.id === tab.dataset.tab) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+
             async function initializeFirebaseAndLoadData() {
                 try {
                     const app = initializeApp(firebaseConfig);
@@ -1189,7 +1191,7 @@
                     console.log('Firebase initialized. User ID:', userId);
 
                     // Attach event listeners ONLY after Firebase is ready
-                    attachAllEventListeners();
+                    attachFirebaseDependentEventListeners();
 
                     const docRef = doc(db, 'artifacts', appId, 'users', userId, 'financialData', 'current');
                     onSnapshot(docRef, (docSnap) => {
