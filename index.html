@@ -183,7 +183,18 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
                             <div>
                                 <label for="input-actual-variable-category" class="form-label text-sm">Category</label>
-                                <input type="text" id="input-actual-variable-category" class="form-input text-sm" placeholder="e.g. Groceries">
+                                <!-- Category Dropdown -->
+                                <select id="input-actual-variable-category" class="form-input text-sm">
+                                    <option value="">Select Category</option>
+                                    <option value="Groceries">Groceries</option>
+                                    <option value="Eating Out">Eating Out</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Personal Care">Personal Care</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Transport">Transport</option>
+                                    <option value="Hobbies">Hobbies</option>
+                                    <option value="Miscellaneous">Miscellaneous</option>
+                                </select>
                             </div>
                             <div>
                                 <label for="input-actual-variable-amount" class="form-label text-sm">Amount</label>
@@ -213,7 +224,7 @@
                     <!-- New: Weekly Variable Spending Snapshot (Budget vs. Actual) -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h2 class="text-2xl font-bold text-slate-900 mb-4">Weekly Variable Spending Snapshot</h2>
-                        <p class="text-sm text-slate-500 mb-4">Compare your budgeted amounts with your actual spending for the current week.</p>
+                        <p class="text-sm text-slate-500 mb-4">Compare your budgeted amounts with your actual spending for the current week. Click on a budget amount to edit it.</p>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-100 text-slate-600">
@@ -307,7 +318,7 @@
                         </div>
                         <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h2 class="text-2xl font-bold text-slate-900 mb-1">Top Spending Categories</h2>
-                             <p class="text-slate-500 mb-4 text-sm">A visual look at where most of the money goes each week.</p>
+                             <p class="text-sm text-slate-500 mb-4">A visual look at where most of the money goes each week.</p>
                             <div class="chart-container">
                                 <canvas id="expensesBarChart"></canvas>
                             </div>
@@ -541,15 +552,16 @@
                     { category: 'Health', provider: 'Gym', amount: 35, freq: 'Weekly' }, 
                     { category: 'Charity', provider: 'Charity', amount: 10, freq: 'Weekly' } 
                 ],
+                // Updated variable expenses to match dropdown and default to 0 budget
                 variableExpenses: [
-                    { name: 'Groceries', budget: 300 },
-                    { name: 'Dining Out', budget: 50 },
-                    { name: 'Entertainment', budget: 30 },
-                    { name: 'Personal Care', budget: 20 },
-                    { name: 'Shopping', budget: 40 },
-                    { name: 'Transport (Other)', budget: 10 },
-                    { name: 'Hobbies', budget: 15 },
-                    { name: 'Miscellaneous', budget: 25 }
+                    { name: 'Groceries', budget: 0 },
+                    { name: 'Eating Out', budget: 0 },
+                    { name: 'Entertainment', budget: 0 },
+                    { name: 'Personal Care', budget: 0 },
+                    { name: 'Shopping', budget: 0 },
+                    { name: 'Transport', budget: 0 },
+                    { name: 'Hobbies', budget: 0 },
+                    { name: 'Miscellaneous', budget: 0 }
                 ],
                 savingsGoal: {
                     name: '30k Goal',
@@ -755,7 +767,9 @@
 
                     row.innerHTML = `
                         <td class="p-3">${budgetCategory.name}</td>
-                        <td class="p-3 text-right">${formatCurrency(budgetedAmount)}</td>
+                        <td class="p-3 text-right">
+                            <input type="number" class="budgeted-variable-amount form-input text-right text-sm" data-category="${budgetCategory.name}" value="${budgetedAmount}">
+                        </td>
                         <td class="p-3 text-right ${actualAmount > budgetedAmount ? 'text-overrun font-semibold' : ''}">${formatCurrency(actualAmount)}</td>
                         <td class="p-3 text-right ${differenceClass}">${formatCurrency(difference)}</td>
                     `;
@@ -771,15 +785,29 @@
 
                 // Apply overrun alert to the main "Total Actual Variable Spending" on Key Metrics and Weekly Breakdown
                 const totalActualElement = document.getElementById('combined-actual-variable-spending');
-                const metricExpensesElement = document.getElementById('metric-expenses');
                 
                 if (totalActual > totalBudgeted) {
                     totalActualElement.classList.add('text-overrun');
-                    // Note: metric-expenses already red if total expenses are high.
-                    // This specific class only applies to the variable spending breakdown.
                 } else {
                     totalActualElement.classList.remove('text-overrun');
                 }
+
+                // Attach event listeners to the new input fields
+                document.querySelectorAll('.budgeted-variable-amount').forEach(input => {
+                    input.addEventListener('input', (event) => {
+                        const categoryName = event.target.dataset.category;
+                        const newBudget = parseFloat(event.target.value) || 0; // Handle empty/invalid input as 0
+
+                        // Find and update the budget in currentData
+                        const categoryIndex = currentData.variableExpenses.findIndex(cat => cat.name === categoryName);
+                        if (categoryIndex !== -1) {
+                            currentData.variableExpenses[categoryIndex].budget = newBudget;
+                            // Re-render and save data immediately after a budget change
+                            processAndRenderData(currentData);
+                            saveData(currentData);
+                        }
+                    });
+                });
             }
 
 
@@ -821,9 +849,9 @@
                     }
                 });
 
-                parsed.variableExpenses = defaultData.variableExpenses; 
+                // Preserve variable expenses (including updated budgets) and historical data
+                parsed.variableExpenses = currentData.variableExpenses; 
                 parsed.actualVariableSpendingLog = currentData.actualVariableSpendingLog || [];
-                // Preserve historical summaries when parsing
                 parsed.historicalSummaries = currentData.historicalSummaries || [];
 
                 return parsed;
@@ -1444,7 +1472,14 @@
                             loadedData.income.combined = loadedData.income.combined ?? defaultData.income.combined;
 
                             loadedData.fixedExpenses = loadedData.fixedExpenses || [];
-                            loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses; 
+                            
+                            // Load variableExpenses, ensuring names match defaultData structure
+                            loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses.map(v => ({...v})); // Deep copy if not present
+                            // Ensure existing loaded variable expenses conform to the new structure/categories if needed
+                            // For simplicity, we'll assume loadedData.variableExpenses will generally align or get re-mapped implicitly
+                            // if categories change. For now, we rely on the defaultData for structure if missing.
+                            // If an old category exists (e.g., "Dining Out"), it will not be in defaultData, so it won't appear
+                            // in the editable budget table unless manually added to defaultData.
                             
                             loadedData.savingsGoal = loadedData.savingsGoal || {};
                             loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
@@ -1463,7 +1498,8 @@
                             loadingOverlay.style.display = 'none'; // Hide loading indicator ONLY AFTER successful data processing
                         } else {
                             console.log("No financial data found in Firestore for the shared document, initializing with default data and saving.");
-                            currentData = defaultData;
+                            // Deep copy defaultData to avoid modifying the original defaultData object directly
+                            currentData = JSON.parse(JSON.stringify(defaultData)); 
                             populateInputsAndRender(currentData);
                             saveData(currentData); // Save default data to Firestore for next time
                             loadingOverlay.style.display = 'none'; // Hide loading indicator
@@ -1475,7 +1511,7 @@
                             console.error("PERMISSION DENIED: Please check your Firestore Security Rules in Firebase Console. Ensure 'allow read, write: if request.auth != null;' is correctly set for the shared data path /artifacts/my-finance-dashboard/sharedData/financialDashboard.");
                         }
                         // Fallback to default data if there's a Firestore error
-                        currentData = defaultData;
+                        currentData = JSON.parse(JSON.stringify(defaultData)); // Deep copy on error fallback
                         populateInputsAndRender(currentData);
                     });
 
@@ -1483,7 +1519,7 @@
                     console.error("FATAL ERROR: Error initializing Firebase or signing in:", error);
                     loadingOverlay.style.display = 'none'; // Hide on fatal error
                     // Fallback to default data if Firebase initialization fails
-                    currentData = defaultData;
+                    currentData = JSON.parse(JSON.stringify(defaultData)); // Deep copy on fatal error fallback
                     populateInputsAndRender(currentData);
                 }
             }
