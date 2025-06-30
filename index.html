@@ -121,6 +121,10 @@
             justify-content: center;
             z-index: 50;
         }
+        .text-overrun {
+            color: #ef4444; /* red-500 */
+            font-weight: 700;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -173,7 +177,7 @@
                 
                 <!-- New "Weekly Spendings" Tab Content - active by default -->
                 <section id="weekly-spendings" class="tab-pane">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
                         <h2 class="text-2xl font-bold text-slate-900 mb-4">Log Actual Weekly Variable Spending</h2>
                         <p class="text-sm text-slate-500 mb-4">Enter individual variable purchases made this week to track actual spending.</p>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
@@ -203,6 +207,38 @@
                         </div>
                         <button type="button" id="reset-variable-spending-button" class="mt-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
                             Reset Weekly Variable Spending
+                        </button>
+                    </div>
+
+                    <!-- New: Weekly Variable Spending Snapshot (Budget vs. Actual) -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Weekly Variable Spending Snapshot</h2>
+                        <p class="text-sm text-slate-500 mb-4">Compare your budgeted amounts with your actual spending for the current week.</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 text-slate-600">
+                                    <tr>
+                                        <th class="p-3 font-semibold">Category</th>
+                                        <th class="p-3 font-semibold text-right">Budgeted</th>
+                                        <th class="p-3 font-semibold text-right">Actual</th>
+                                        <th class="p-3 font-semibold text-right">Difference</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="variable-spending-summary-table">
+                                    <!-- Variable spending summary will be rendered here -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-slate-200 font-bold">
+                                        <td class="p-3">Total Variable</td>
+                                        <td class="p-3 text-right" id="total-variable-budgeted">$0.00</td>
+                                        <td class="p-3 text-right" id="total-variable-actual">$0.00</td>
+                                        <td class="p-3 text-right" id="total-variable-difference">$0.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <button type="button" id="archive-week-button" class="mt-6 bg-indigo-600 text-white py-2 px-4 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
+                            Archive Current Week & Start New
                         </button>
                     </div>
                 </section>
@@ -237,6 +273,15 @@
                                 <li class="flex justify-between items-center"><span class="font-medium">Total Savings Contribution:</span> <span class="font-semibold text-blue-600" id="combined-savings-contribution"></span></li>
                                 <li class="flex justify-between items-center border-t pt-2 mt-2"><span class="font-bold">Remaining Disposable:</span> <span class="font-bold text-slate-800" id="combined-disposable"></span></li>
                             </ul>
+                        </div>
+                    </div>
+
+                    <!-- New: Historical Net Position Chart -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mt-6">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Historical Net Position</h2>
+                        <p class="text-sm text-slate-500 mb-4">Track your weekly net financial position over time (from archived weeks).</p>
+                        <div class="chart-container">
+                            <canvas id="historicalNetPositionChart"></canvas>
                         </div>
                     </div>
                 </section>
@@ -296,6 +341,64 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Log Actual Weekly Savings moved here -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mt-6">
+                        <h3 class="text-lg font-semibold text-slate-700 mb-3">Log Actual Weekly Savings</h3>
+                        <p class="text-sm text-slate-500 mb-4">Add the amount you actually saved this week to update your total progress.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
+                            <div>
+                                <label for="input-weekly-actual-amount" class="form-label text-sm">Amount Saved This Week</label>
+                                <input type="number" id="input-weekly-actual-amount" class="form-input text-sm" placeholder="e.g. 550">
+                            </div>
+                            <div>
+                                <label for="input-weekly-actual-date" class="form-label text-sm">Date of Saving (Optional)</label>
+                                <input type="date" id="input-weekly-actual-date" class="form-input text-sm">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" id="add-actual-saving-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
+                                    Log Saving
+                                </button>
+                            </div>
+                        </div>
+                        <div id="actual-savings-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
+                            <p class="text-center text-slate-400" id="no-actuals-message">No actual savings logged yet.</p>
+                            <ul id="actual-savings-list" class="space-y-1">
+                                <!-- Logged entries will appear here -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Log Savings Used moved here -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mt-6">
+                        <h3 class="text-lg font-semibold text-slate-700 mb-3">Log Savings Used</h3>
+                        <p class="text-sm text-slate-500 mb-4">Record instances where savings were withdrawn or used for specific purposes.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
+                            <div>
+                                <label for="input-savings-used-amount" class="form-label text-sm">Amount Used</label>
+                                <input type="number" id="input-savings-used-amount" class="form-input text-sm" placeholder="e.g. 200">
+                            </div>
+                            <div>
+                                <label for="input-savings-used-reason" class="form-label text-sm">Reason</label>
+                                <input type="text" id="input-savings-used-reason" class="form-input text-sm" placeholder="e.g. Emergency repair">
+                            </div>
+                            <div>
+                                <label for="form-label text-sm">Date (Optional)</label>
+                                <input type="date" id="input-savings-used-date" class="form-input text-sm">
+                            </div>
+                            <div class="flex items-end md:col-span-3">
+                                <button type="button" id="add-savings-used-button" class="bg-yellow-600 text-white py-2 px-4 rounded-lg shadow hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
+                                    Log Savings Used
+                                </button>
+                            </div>
+                        </div>
+                        <div id="actual-savings-used-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
+                            <p class="text-center text-slate-400" id="no-savings-used-message">No savings used logged yet.</p>
+                            <ul id="actual-savings-used-list" class="space-y-1">
+                                <!-- Logged uses will appear here -->
+                            </ul>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="data-input" class="tab-pane hidden">
@@ -322,7 +425,7 @@
                             <!-- Savings Goal inputs are now a direct child of the data-input section div below -->
                         </div>
 
-                        <!-- Savings Goal (30k Goal) moved here from above, and internal elements reordered -->
+                        <!-- Savings Goal (30k Goal) inputs remain here -->
                         <div class="mb-6">
                             <h3 class="text-lg font-semibold text-slate-700 mb-3">Savings Goal (30k Goal)</h3>
                             <div class="mb-4">
@@ -341,62 +444,8 @@
                                 <label for="input-savings-start-date" class="form-label">Start Date (YYYY-MM-DD)</label>
                                 <input type="date" id="input-savings-start-date" class="form-input"> 
                             </div>
-
-                            <!-- Log Actual Weekly Savings moved above Log Savings Used -->
-                            <h4 class="text-md font-semibold text-slate-700 mt-6 mb-3">Log Actual Weekly Savings</h4>
-                            <p class="text-sm text-slate-500 mb-4">Add the amount you actually saved this week to update your total progress.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
-                                <div>
-                                    <label for="input-weekly-actual-amount" class="form-label text-sm">Amount Saved This Week</label>
-                                    <input type="number" id="input-weekly-actual-amount" class="form-input text-sm" placeholder="e.g. 550">
-                                </div>
-                                <div>
-                                    <label for="input-weekly-actual-date" class="form-label text-sm">Date of Saving (Optional)</label>
-                                    <input type="date" id="input-weekly-actual-date" class="form-input text-sm">
-                                </div>
-                                <div class="flex items-end">
-                                    <button type="button" id="add-actual-saving-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
-                                        Log Saving
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="actual-savings-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
-                                <p class="text-center text-slate-400" id="no-actuals-message">No actual savings logged yet.</p>
-                                <ul id="actual-savings-list" class="space-y-1">
-                                    <!-- Logged entries will appear here -->
-                                </ul>
-                            </div>
-
-                            <!-- Log Savings Used -->
-                            <h4 class="text-md font-semibold text-slate-700 mt-6 mb-3">Log Savings Used</h4>
-                            <p class="text-sm text-slate-500 mb-4">Record instances where savings were withdrawn or used for specific purposes.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 items-end">
-                                <div>
-                                    <label for="input-savings-used-amount" class="form-label text-sm">Amount Used</label>
-                                    <input type="number" id="input-savings-used-amount" class="form-input text-sm" placeholder="e.g. 200">
-                                </div>
-                                <div>
-                                    <label for="input-savings-used-reason" class="form-label text-sm">Reason</label>
-                                    <input type="text" id="input-savings-used-reason" class="form-input text-sm" placeholder="e.g. Emergency repair">
-                                </div>
-                                <div>
-                                    <label for="form-label text-sm">Date (Optional)</label>
-                                    <input type="date" id="input-savings-used-date" class="form-input text-sm">
-                                </div>
-                                <div class="flex items-end md:col-span-3">
-                                    <button type="button" id="add-savings-used-button" class="bg-yellow-600 text-white py-2 px-4 rounded-lg shadow hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
-                                        Log Savings Used
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="actual-savings-used-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
-                                <p class="text-center text-slate-400" id="no-savings-used-message">No savings used logged yet.</p>
-                                <ul id="actual-savings-used-list" class="space-y-1">
-                                    <!-- Logged uses will appear here -->
-                                </ul>
-                            </div>
                         </div>
-                        <!-- End moved Savings Goal section -->
+                        <!-- End Savings Goal inputs section -->
 
                         <div class="mb-6">
                             <h3 class="text-lg font-semibold text-slate-700 mb-3">Fixed Expenses</h3>
@@ -442,6 +491,10 @@
                 if (!(date instanceof Date) || isNaN(date)) {
                     return 'N/A';
                 }
+                // Check if date is a string in YYYY-MM-DD format
+                if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    return new Date(date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric'});
+                }
                 return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric'});
             };
 
@@ -458,7 +511,7 @@
                 }
             };
 
-            // Modified defaultData to ensure all fixed expenses default to 'Weekly'
+            // Default data for the shared version, with all fixed expenses defaulting to Weekly
             const defaultData = {
                 income: {
                     emma: 1391,
@@ -467,24 +520,24 @@
                 },
                 fixedExpenses: [
                     { category: 'Streaming', provider: 'Spotify', amount: 5, freq: 'Weekly' },
-                    { category: 'Internet', provider: 'Telstra', amount: 24, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Mobile', provider: 'Optus', amount: 36.5, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Internet', provider: 'Telstra', amount: 24, freq: 'Weekly' }, 
+                    { category: 'Mobile', provider: 'Optus', amount: 36.5, freq: 'Weekly' }, 
                     { category: 'Transport', provider: 'Tolls', amount: 36, freq: 'Weekly' },
-                    { category: 'Loan', provider: 'Car Repayment', amount: 100, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Insurance', provider: 'Emma Car Insurance', amount: 52, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Insurance', provider: 'Jordan Car Insurance', amount: 22, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Utilities', provider: 'Water', amount: 40, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Utilities', provider: 'Electricity', amount: 80, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Utilities', provider: 'Solar', amount: 40, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Housing', provider: 'Rates', amount: 80, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Housing', provider: 'Mortgage', amount: 1211, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Loan', provider: 'Car Repayment', amount: 100, freq: 'Weekly' }, 
+                    { category: 'Insurance', provider: 'Emma Car Insurance', amount: 52, freq: 'Weekly' }, 
+                    { category: 'Insurance', provider: 'Jordan Car Insurance', amount: 22, freq: 'Weekly' }, 
+                    { category: 'Utilities', provider: 'Water', amount: 40, freq: 'Weekly' }, 
+                    { category: 'Utilities', provider: 'Electricity', amount: 80, freq: 'Weekly' }, 
+                    { category: 'Utilities', provider: 'Solar', amount: 40, freq: 'Weekly' }, 
+                    { category: 'Housing', provider: 'Rates', amount: 80, freq: 'Weekly' }, 
+                    { category: 'Housing', provider: 'Mortgage', amount: 1211, freq: 'Weekly' }, 
                     { category: 'Transport', provider: 'Petrol', amount: 40, freq: 'Weekly' },
-                    { category: 'Health', provider: 'Health Care', amount: 83, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Utilities', provider: 'Gas', amount: 10, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Streaming', provider: 'Netflix', amount: 3, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Weekly' }, // Changed to Weekly
-                    { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Health', provider: 'Health Care', amount: 83, freq: 'Weekly' }, 
+                    { category: 'Utilities', provider: 'Gas', amount: 10, freq: 'Weekly' }, 
+                    { category: 'Streaming', provider: 'Netflix', amount: 3, freq: 'Weekly' }, 
+                    { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Weekly' }, 
+                    { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Weekly' }, 
+                    { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Weekly' }, 
                     { category: 'Health', provider: 'Gym', amount: 35, freq: 'Weekly' }, 
                     { category: 'Charity', provider: 'Charity', amount: 10, freq: 'Weekly' } 
                 ],
@@ -501,25 +554,27 @@
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900, // This is the default starting amount if NO data is loaded
+                    current: 21900, 
                     target: 30000,
                     weeklyContribution: 700,
                     actualSavingsLog: [],
                     actualSavingsUsedLog: [] 
                 },
-                actualVariableSpendingLog: [] 
+                actualVariableSpendingLog: [],
+                // New: Array to store historical weekly summaries
+                historicalSummaries: [] 
             };
 
 
-            let combinedWeeklyChart, expensesBarChart, savingsLineChart; 
+            let combinedWeeklyChart, expensesBarChart, savingsLineChart, historicalNetPositionChart; 
 
             async function saveData(data) {
-                if (!db) { // No need to check userId for shared data
+                if (!db) { 
                     console.error("Firestore not initialized. Cannot save data.");
                     return;
                 }
                 try {
-                    // Changed to a fixed, shared document path
+                    // Path for shared data
                     const docRef = doc(db, 'artifacts', appId, 'sharedData', 'financialDashboard'); 
                     const dataToSave = JSON.parse(JSON.stringify(data)); 
                     console.log("Saving data to Firestore. Current savings:", dataToSave.savingsGoal.current);
@@ -541,7 +596,6 @@
                 weeklyDisplay.textContent = formatCurrency(weeklyValue);
             }
 
-            // Modified createFixedExpenseRow to default freq to 'Weekly'
             function createFixedExpenseRow(category = '', provider = '', amount = '', freq = 'Weekly') {
                 const container = document.getElementById('fixed-expenses-inputs-container');
                 const rowDiv = document.createElement('div');
@@ -675,6 +729,59 @@
                 }
             }
 
+            // New: Render Variable Spending Summary (Budget vs. Actual)
+            function renderVariableSpendingSummary() {
+                const tableBody = document.getElementById('variable-spending-summary-table');
+                tableBody.innerHTML = '';
+
+                let totalBudgeted = 0;
+                let totalActual = 0;
+
+                // Create a map of actual spending by category for easy lookup
+                const actualSpendingByCategory = currentData.actualVariableSpendingLog.reduce((acc, item) => {
+                    acc[item.category] = (acc[item.category] || 0) + item.amount;
+                    return acc;
+                }, {});
+
+                // Iterate through budgeted categories to build the summary table
+                currentData.variableExpenses.forEach(budgetCategory => {
+                    const budgetedAmount = budgetCategory.budget;
+                    const actualAmount = actualSpendingByCategory[budgetCategory.name] || 0;
+                    const difference = budgetedAmount - actualAmount;
+
+                    const row = document.createElement('tr');
+                    // Add class for negative difference
+                    const differenceClass = difference < 0 ? 'text-overrun' : '';
+
+                    row.innerHTML = `
+                        <td class="p-3">${budgetCategory.name}</td>
+                        <td class="p-3 text-right">${formatCurrency(budgetedAmount)}</td>
+                        <td class="p-3 text-right ${actualAmount > budgetedAmount ? 'text-overrun font-semibold' : ''}">${formatCurrency(actualAmount)}</td>
+                        <td class="p-3 text-right ${differenceClass}">${formatCurrency(difference)}</td>
+                    `;
+                    tableBody.appendChild(row);
+
+                    totalBudgeted += budgetedAmount;
+                    totalActual += actualAmount;
+                });
+
+                document.getElementById('total-variable-budgeted').textContent = formatCurrency(totalBudgeted);
+                document.getElementById('total-variable-actual').textContent = formatCurrency(totalActual);
+                document.getElementById('total-variable-difference').textContent = formatCurrency(totalBudgeted - totalActual);
+
+                // Apply overrun alert to the main "Total Actual Variable Spending" on Key Metrics and Weekly Breakdown
+                const totalActualElement = document.getElementById('combined-actual-variable-spending');
+                const metricExpensesElement = document.getElementById('metric-expenses');
+                
+                if (totalActual > totalBudgeted) {
+                    totalActualElement.classList.add('text-overrun');
+                    // Note: metric-expenses already red if total expenses are high.
+                    // This specific class only applies to the variable spending breakdown.
+                } else {
+                    totalActualElement.classList.remove('text-overrun');
+                }
+            }
+
 
             function parseInputData() {
                 const parsed = {};
@@ -716,6 +823,8 @@
 
                 parsed.variableExpenses = defaultData.variableExpenses; 
                 parsed.actualVariableSpendingLog = currentData.actualVariableSpendingLog || [];
+                // Preserve historical summaries when parsing
+                parsed.historicalSummaries = currentData.historicalSummaries || [];
 
                 return parsed;
             }
@@ -743,7 +852,8 @@
                 document.getElementById('metric-income').textContent = formatCurrency(currentData.income.combined);
                 document.getElementById('metric-expenses').textContent = formatCurrency(processed.totalFixedWeekly + processed.totalActualVariableSpending); 
                 document.getElementById('metric-savings').textContent = formatCurrency(currentData.savingsGoal.weeklyContribution);
-                document.getElementById('metric-net').textContent = formatCurrency(currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution);
+                const netWeeklyPosition = currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution;
+                document.getElementById('metric-net').textContent = formatCurrency(netWeeklyPosition);
 
                 // Update Combined Weekly Summary
                 document.getElementById('combined-net-pay').textContent = formatCurrency(currentData.income.combined);
@@ -838,6 +948,11 @@
                 }
 
                 updateLineChart('savingsLineChart', projectionLabels, projectionData);
+
+                // Call new rendering functions for new features
+                renderVariableSpendingSummary();
+                updateHistoricalChart(currentData.historicalSummaries);
+
                 console.log("Finished processAndRenderData.");
             }
 
@@ -1022,6 +1137,60 @@
                 }
             }
 
+            // New: Update Historical Net Position Chart
+            function updateHistoricalChart(historicalData) {
+                const ctx = document.getElementById('historicalNetPositionChart').getContext('2d');
+                if (!ctx) {
+                    console.error('Canvas context not found for historicalNetPositionChart.');
+                    return;
+                }
+                if (historicalNetPositionChart) {
+                    historicalNetPositionChart.destroy();
+                }
+
+                const labels = historicalData.map(item => formatDate(item.date));
+                const data = historicalData.map(item => item.netPosition);
+
+                historicalNetPositionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Net Position',
+                            data: data,
+                            borderColor: '#3b82f6', // blue-500
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        ...chartDefaults,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => formatCurrency(value)
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: 7
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+
             // Function to attach all event listeners that are dependent on Firebase
             function attachFirebaseDependentEventListeners() {
                 console.log("Attaching Firebase dependent event listeners.");
@@ -1072,6 +1241,7 @@
 
                         processAndRenderData(currentData);
                         renderActualVariableSpendingLog();
+                        renderVariableSpendingSummary(); // Re-render summary after adding spending
                         saveData(currentData);
                     } else {
                         console.warn('Invalid actual variable spending entry. Please fill in category and a positive amount.');
@@ -1083,6 +1253,7 @@
                         currentData.actualVariableSpendingLog = [];
                         processAndRenderData(currentData);
                         renderActualVariableSpendingLog();
+                        renderVariableSpendingSummary(); // Re-render summary after reset
                         saveData(currentData);
                         console.log('Actual variable spending log reset.');
                     }
@@ -1144,8 +1315,52 @@
                     processAndRenderData(currentData);
                     saveData(currentData);
                 });
+
+                // New: Archive Week button event listener
+                document.getElementById('archive-week-button').addEventListener('click', () => {
+                    if (confirm('Are you sure you want to archive the current week and clear variable spending for a new week? This will save the current week\'s summary and reset your variable spending log.')) {
+                        archiveCurrentWeek();
+                    }
+                });
             }
 
+            // New: Function to archive current week's data
+            function archiveCurrentWeek() {
+                const processed = { // Recalculate based on currentData to ensure freshest values
+                    fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
+                        category: e.category, 
+                        provider: e.provider, 
+                        weekly: getWeeklyAmount(e.amount, e.freq)
+                    })),
+                    get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
+                    get totalVariableBudget() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); }, 
+                    get totalActualVariableSpending() { return currentData.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0); }, 
+                };
+
+                const netWeeklyPosition = currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution;
+
+                const weekSummary = {
+                    date: new Date().toISOString().split('T')[0], // Use current date for the archive
+                    incomeCombined: currentData.income.combined,
+                    totalFixedExpenses: processed.totalFixedWeekly,
+                    totalVariableBudget: processed.totalVariableBudget,
+                    totalActualVariableSpending: processed.totalActualVariableSpending,
+                    savingsContribution: currentData.savingsGoal.weeklyContribution,
+                    netPosition: netWeeklyPosition
+                };
+
+                if (!currentData.historicalSummaries) {
+                    currentData.historicalSummaries = [];
+                }
+                currentData.historicalSummaries.push(weekSummary);
+                console.log("Archived week summary:", weekSummary);
+                console.log("Historical summaries count:", currentData.historicalSummaries.length);
+
+                currentData.actualVariableSpendingLog = []; // Reset variable spending for the new week
+
+                processAndRenderData(currentData); // Re-render with updated data and clear variable spending inputs
+                saveData(currentData); // Save the updated data including historical summary
+            }
 
             // Function to populate inputs and render dashboard from loaded data
             function populateInputsAndRender(data) {
@@ -1169,6 +1384,8 @@
                 renderActualSavingsLog();
                 renderActualSavingsUsedLog();
                 renderActualVariableSpendingLog();
+                renderVariableSpendingSummary(); // Initial render of the new section
+                updateHistoricalChart(data.historicalSummaries || []); // Initial render of historical chart
                 console.log("Finished populateInputsAndRender. Dashboard rendering complete.");
             }
 
@@ -1202,15 +1419,15 @@
                     analytics = getAnalytics(app); 
                     console.log("Firebase services (Firestore, Auth, Analytics) obtained.");
 
-                    console.log("Attempting anonymous sign-in (needed for authentication context even with shared data path)...");
+                    console.log("Attempting anonymous sign-in...");
                     const userCredential = await signInAnonymously(auth);
-                    userId = userCredential.user.uid; // userId is still obtained but not used in doc path
+                    userId = userCredential.user.uid; 
                     console.log('Anonymous user signed in. User ID:', userId);
 
                     // Attach event listeners ONLY after Firebase is ready
                     attachFirebaseDependentEventListeners();
 
-                    // Changed to a fixed, shared document path for all users/devices
+                    // Using the fixed, shared document path for all users/devices
                     console.log(`Setting up Firestore onSnapshot listener for SHARED path: artifacts/${appId}/sharedData/financialDashboard`);
                     const docRef = doc(db, 'artifacts', appId, 'sharedData', 'financialDashboard');
                     onSnapshot(docRef, (docSnap) => {
@@ -1222,7 +1439,7 @@
 
                             // Ensure logs and arrays are valid objects/arrays, falling back to empty if undefined or null
                             loadedData.income = loadedData.income || {};
-                            loadedData.income.emma = loadedData.income.emma ?? defaultData.income.emma; // Use nullish coalescing for explicit defaults
+                            loadedData.income.emma = loadedData.income.emma ?? defaultData.income.emma; 
                             loadedData.income.jordan = loadedData.income.jordan ?? defaultData.income.jordan;
                             loadedData.income.combined = loadedData.income.combined ?? defaultData.income.combined;
 
@@ -1238,7 +1455,8 @@
                             loadedData.savingsGoal.startDate = loadedData.savingsGoal.startDate || defaultData.savingsGoal.startDate;
 
                             loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
-                            
+                            loadedData.historicalSummaries = loadedData.historicalSummaries || []; // Ensure historicalSummaries exists
+
                             console.log("Current savings after data loading (from onSnapshot):", loadedData.savingsGoal.current);
                             // Use the loaded data to populate and render
                             populateInputsAndRender(loadedData);
