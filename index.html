@@ -161,7 +161,9 @@
             </section>
 
             <nav class="flex border-b border-slate-200 mb-6 overflow-x-auto">
-                <button data-tab="weekly" class="tab-button py-3 px-4 md:px-6 border-b-2 tab-active whitespace-nowrap">Weekly Breakdown</button>
+                <!-- New "Weekly Spendings" tab - first and active by default -->
+                <button data-tab="weekly-spendings" class="tab-button py-3 px-4 md:px-6 border-b-2 tab-active whitespace-nowrap">Weekly Spendings</button>
+                <button data-tab="weekly-breakdown" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Weekly Breakdown</button>
                 <button data-tab="expenses" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Expenses Deep Dive</button>
                 <button data-tab="savings" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Savings Goals</button>
                 <button data-tab="data-input" class="tab-button py-3 px-4 md:px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Data Input</button>
@@ -169,7 +171,43 @@
 
             <div id="tab-content">
                 
-                <section id="weekly" class="tab-pane">
+                <!-- New "Weekly Spendings" Tab Content - active by default -->
+                <section id="weekly-spendings" class="tab-pane">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Log Actual Weekly Variable Spending</h2>
+                        <p class="text-sm text-slate-500 mb-4">Enter individual variable purchases made this week to track actual spending.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
+                            <div>
+                                <label for="input-actual-variable-category" class="form-label text-sm">Category</label>
+                                <input type="text" id="input-actual-variable-category" class="form-input text-sm" placeholder="e.g. Groceries">
+                            </div>
+                            <div>
+                                <label for="input-actual-variable-amount" class="form-label text-sm">Amount</label>
+                                <input type="number" id="input-actual-variable-amount" class="form-input text-sm" placeholder="e.g. 75">
+                            </div>
+                            <div>
+                                <label for="input-actual-variable-date" class="form-label text-sm">Date (Optional)</label>
+                                <input type="date" id="input-actual-variable-date" class="form-input text-sm">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" id="add-actual-variable-spending-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
+                                    Log Spending
+                                </button>
+                            </div>
+                        </div>
+                        <div id="actual-variable-spending-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
+                            <p class="text-center text-slate-400" id="no-actual-variable-spending-message">No actual variable spending logged yet this week.</p>
+                            <ul id="actual-variable-spending-list" class="space-y-1">
+                                <!-- Logged entries will appear here -->
+                            </ul>
+                        </div>
+                        <button type="button" id="reset-variable-spending-button" class="mt-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                            Reset Weekly Variable Spending
+                        </button>
+                    </div>
+                </section>
+
+                <section id="weekly-breakdown" class="tab-pane hidden"> <!-- Changed ID from 'weekly' to 'weekly-breakdown' -->
                     <div class="text-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-900">Combined Weekly Summary</h2>
                         <p class="text-slate-500 mt-1">An overview of our household's income and how it's allocated per week.</p>
@@ -284,41 +322,6 @@
                             <!-- Savings Goal inputs are now a direct child of the data-input section div below -->
                         </div>
 
-                        <!-- Moved Log Actual Weekly Variable Spending to top -->
-                        <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-slate-700 mb-3">Log Actual Weekly Variable Spending</h3>
-                            <p class="text-sm text-slate-500 mb-4">Enter individual variable purchases made this week to track actual spending.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
-                                <div>
-                                    <label for="input-actual-variable-category" class="form-label text-sm">Category</label>
-                                    <input type="text" id="input-actual-variable-category" class="form-input text-sm" placeholder="e.g. Groceries">
-                                </div>
-                                <div>
-                                    <label for="input-actual-variable-amount" class="form-label text-sm">Amount</label>
-                                    <input type="number" id="input-actual-variable-amount" class="form-input text-sm" placeholder="e.g. 75">
-                                </div>
-                                <div>
-                                    <label for="input-actual-variable-date" class="form-label text-sm">Date (Optional)</label>
-                                    <input type="date" id="input-actual-variable-date" class="form-input text-sm">
-                                </div>
-                                <div class="flex items-end">
-                                    <button type="button" id="add-actual-variable-spending-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out w-full">
-                                        Log Spending
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="actual-variable-spending-log-display" class="mt-4 p-3 bg-slate-100 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600">
-                                <p class="text-center text-slate-400" id="no-actual-variable-spending-message">No actual variable spending logged yet this week.</p>
-                                <ul id="actual-variable-spending-list" class="space-y-1">
-                                    <!-- Logged entries will appear here -->
-                                </ul>
-                            </div>
-                            <button type="button" id="reset-variable-spending-button" class="mt-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
-                                Reset Weekly Variable Spending
-                            </button>
-                        </div>
-                        <!-- End new section -->
-                        
                         <!-- Savings Goal (30k Goal) moved here from above, and internal elements reordered -->
                         <div class="mb-6">
                             <h3 class="text-lg font-semibold text-slate-700 mb-3">Savings Goal (30k Goal)</h3>
@@ -455,6 +458,7 @@
                 }
             };
 
+            // Modified defaultData to ensure all fixed expenses default to 'Weekly'
             const defaultData = {
                 income: {
                     emma: 1391,
@@ -463,24 +467,24 @@
                 },
                 fixedExpenses: [
                     { category: 'Streaming', provider: 'Spotify', amount: 5, freq: 'Weekly' },
-                    { category: 'Internet', provider: 'Telstra', amount: 24, freq: 'Monthly' },
-                    { category: 'Mobile', provider: 'Optus', amount: 36.5, freq: 'Monthly' },
+                    { category: 'Internet', provider: 'Telstra', amount: 24, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Mobile', provider: 'Optus', amount: 36.5, freq: 'Weekly' }, // Changed to Weekly
                     { category: 'Transport', provider: 'Tolls', amount: 36, freq: 'Weekly' },
-                    { category: 'Loan', provider: 'Car Repayment', amount: 100, freq: 'Monthly' },
-                    { category: 'Insurance', provider: 'Emma Car Insurance', amount: 52, freq: 'Monthly' },
-                    { category: 'Insurance', provider: 'Jordan Car Insurance', amount: 22, freq: 'Yearly' },
-                    { category: 'Utilities', provider: 'Water', amount: 40, freq: 'Quarterly' },
-                    { category: 'Utilities', provider: 'Electricity', amount: 80, freq: 'Quarterly' },
-                    { category: 'Utilities', provider: 'Solar', amount: 40, freq: 'Monthly' },
-                    { category: 'Housing', provider: 'Rates', amount: 80, freq: 'Quarterly' },
-                    { category: 'Housing', provider: 'Mortgage', amount: 1211, freq: 'Fortnightly' },
+                    { category: 'Loan', provider: 'Car Repayment', amount: 100, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Insurance', provider: 'Emma Car Insurance', amount: 52, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Insurance', provider: 'Jordan Car Insurance', amount: 22, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Utilities', provider: 'Water', amount: 40, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Utilities', provider: 'Electricity', amount: 80, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Utilities', provider: 'Solar', amount: 40, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Housing', provider: 'Rates', amount: 80, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Housing', provider: 'Mortgage', amount: 1211, freq: 'Weekly' }, // Changed to Weekly
                     { category: 'Transport', provider: 'Petrol', amount: 40, freq: 'Weekly' },
-                    { category: 'Health', provider: 'Health Care', amount: 83, freq: 'Monthly' }, 
-                    { category: 'Utilities', provider: 'Gas', amount: 10, freq: 'Quarterly' },
-                    { category: 'Streaming', provider: 'Netflix', amount: 3, freq: 'Monthly' },
-                    { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Monthly' },
-                    { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Yearly' },
-                    { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Monthly' },
+                    { category: 'Health', provider: 'Health Care', amount: 83, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Utilities', provider: 'Gas', amount: 10, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Streaming', provider: 'Netflix', amount: 3, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Weekly' }, // Changed to Weekly
+                    { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Weekly' }, // Changed to Weekly
                     { category: 'Health', provider: 'Gym', amount: 35, freq: 'Weekly' }, 
                     { category: 'Charity', provider: 'Charity', amount: 10, freq: 'Weekly' } 
                 ],
@@ -537,6 +541,7 @@
                 weeklyDisplay.textContent = formatCurrency(weeklyValue);
             }
 
+            // Modified createFixedExpenseRow to default freq to 'Weekly'
             function createFixedExpenseRow(category = '', provider = '', amount = '', freq = 'Weekly') {
                 const container = document.getElementById('fixed-expenses-inputs-container');
                 const rowDiv = document.createElement('div');
