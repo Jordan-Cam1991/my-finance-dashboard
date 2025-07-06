@@ -194,11 +194,17 @@
                                     <option value="Transport">Transport</option>
                                     <option value="Hobbies">Hobbies</option>
                                     <option value="Miscellaneous">Miscellaneous</option>
+                                    <option value="Coffee">Coffee</option> <!-- Added Coffee Category -->
                                 </select>
                             </div>
                             <div>
                                 <label for="input-actual-variable-amount" class="form-label text-sm">Amount</label>
                                 <input type="number" id="input-actual-variable-amount" class="form-input text-sm" placeholder="e.g. 75">
+                            </div>
+                            <!-- Description Input (now always visible) -->
+                            <div id="description-input-group">
+                                <label for="input-actual-variable-description" class="form-label text-sm">Description (Optional)</label>
+                                <input type="text" id="input-actual-variable-description" class="form-input text-sm" placeholder="e.g. Had lunch with friends">
                             </div>
                             <div>
                                 <label for="input-actual-variable-date" class="form-label text-sm">Date (Optional)</label>
@@ -426,11 +432,11 @@
                                 </div>
                                 <div class="mb-4">
                                     <label for="input-emma-income" class="form-label">Emma's Weekly Net Salary</label>
-                                    <input type="number" id="input-emma-income" class="form-input" value="1391">
+                                    <input type="number" id="input-emma-income" class="form-input" value="0">
                                 </div>
                                 <div class="mb-0">
                                     <label for="input-jordan-income" class="form-label">Jordan's Weekly Net Salary</label>
-                                    <input type="number" id="input-jordan-income" class="form-input" value="1797">
+                                    <input type="number" id="input-jordan-income" class="form-input" value="0">
                                 </div>
                             </div>
                             <!-- Savings Goal inputs are now a direct child of the data-input section div below -->
@@ -441,15 +447,15 @@
                             <h3 class="text-lg font-semibold text-slate-700 mb-3">Savings Goal (30k Goal)</h3>
                             <div class="mb-4">
                                 <label for="input-savings-current" class="form-label">Current Savings</label>
-                                <input type="number" id="input-savings-current" class="form-input" value="21900" readonly> <!-- Added readonly -->
+                                <input type="number" id="input-savings-current" class="form-input" value="0" readonly> <!-- Added readonly -->
                             </div>
                             <div class="mb-4">
                                 <label for="input-savings-target" class="form-label">Target Savings</label>
-                                <input type="number" id="input-savings-target" class="form-input" value="30000">
+                                <input type="number" id="input-savings-target" class="form-input" value="0">
                             </div>
                             <div class="mb-4">
                                 <label for="input-weekly-contribution" class="form-label">Weekly Contribution</labeL>
-                                <input type="number" id="input-weekly-contribution" class="form-input" value="700">
+                                <input type="number" id="input-weekly-contribution" class="form-input" value="0">
                             </div>
                             <div class="mb-0">
                                 <label for="input-savings-start-date" class="form-label">Start Date (YYYY-MM-DD)</label>
@@ -502,7 +508,7 @@
                 if (!(date instanceof Date) || isNaN(date)) {
                     return 'N/A';
                 }
-                // Check if date is a string in YYYY-MM-DD format
+                // Check if date is a string inYYYY-MM-DD format
                 if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
                     return new Date(date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric'});
                 }
@@ -525,34 +531,11 @@
             // Default data for the shared version, with all fixed expenses defaulting to Weekly
             const defaultData = {
                 income: {
-                    emma: 1391,
-                    jordan: 1797,
-                    combined: 3188 
+                    emma: 0,
+                    jordan: 0,
+                    combined: 0 
                 },
-                fixedExpenses: [
-                    { category: 'Streaming', provider: 'Spotify', amount: 5, freq: 'Weekly' },
-                    { category: 'Internet', provider: 'Telstra', amount: 24, freq: 'Weekly' }, 
-                    { category: 'Mobile', provider: 'Optus', amount: 36.5, freq: 'Weekly' }, 
-                    { category: 'Transport', provider: 'Tolls', amount: 36, freq: 'Weekly' },
-                    { category: 'Loan', provider: 'Car Repayment', amount: 100, freq: 'Weekly' }, 
-                    { category: 'Insurance', provider: 'Emma Car Insurance', amount: 52, freq: 'Weekly' }, 
-                    { category: 'Insurance', provider: 'Jordan Car Insurance', amount: 22, freq: 'Weekly' }, 
-                    { category: 'Utilities', provider: 'Water', amount: 40, freq: 'Weekly' }, 
-                    { category: 'Utilities', provider: 'Electricity', amount: 80, freq: 'Weekly' }, 
-                    { category: 'Utilities', provider: 'Solar', amount: 40, freq: 'Weekly' }, 
-                    { category: 'Housing', provider: 'Rates', amount: 80, freq: 'Weekly' }, 
-                    { category: 'Housing', provider: 'Mortgage', amount: 1211, freq: 'Weekly' }, 
-                    { category: 'Transport', provider: 'Petrol', amount: 40, freq: 'Weekly' },
-                    { category: 'Health', provider: 'Health Care', amount: 83, freq: 'Weekly' }, 
-                    { category: 'Utilities', provider: 'Gas', amount: 10, freq: 'Weekly' }, 
-                    { category: 'Streaming', provider: 'Netflix', amount: 3, freq: 'Weekly' }, 
-                    { category: 'Streaming', provider: 'Kayo', amount: 10, freq: 'Weekly' }, 
-                    { category: 'Insurance', provider: 'Home Insurance', amount: 36, freq: 'Weekly' }, 
-                    { category: 'Pets', provider: 'Cat Food / Litter', amount: 45, freq: 'Weekly' }, 
-                    { category: 'Health', provider: 'Gym', amount: 35, freq: 'Weekly' }, 
-                    { category: 'Charity', provider: 'Charity', amount: 10, freq: 'Weekly' } 
-                ],
-                // Updated variable expenses to match dropdown and default to 0 budget
+                fixedExpenses: [], // Cleared
                 variableExpenses: [
                     { name: 'Groceries', budget: 0 },
                     { name: 'Eating Out', budget: 0 },
@@ -561,20 +544,20 @@
                     { name: 'Shopping', budget: 0 },
                     { name: 'Transport', budget: 0 },
                     { name: 'Hobbies', budget: 0 },
-                    { name: 'Miscellaneous', budget: 0 }
+                    { name: 'Miscellaneous', budget: 0 },
+                    { name: 'Coffee', budget: 0 } // Added Coffee to default variable expenses
                 ],
                 savingsGoal: {
                     name: '30k Goal',
                     startDate: new Date().toISOString().split('T')[0], 
-                    current: 21900, 
-                    target: 30000,
-                    weeklyContribution: 700,
-                    actualSavingsLog: [],
-                    actualSavingsUsedLog: [] 
+                    current: 0, 
+                    target: 0,
+                    weeklyContribution: 0,
+                    actualSavingsLog: [], // Cleared
+                    actualSavingsUsedLog: [] // Cleared
                 },
-                actualVariableSpendingLog: [],
-                // New: Array to store historical weekly summaries
-                historicalSummaries: [] 
+                actualVariableSpendingLog: [], // Cleared
+                historicalSummaries: [] // Cleared
             };
 
 
@@ -731,17 +714,25 @@
                     const sortedLogs = [...currentData.actualVariableSpendingLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
                     sortedLogs.forEach(entry => {
                         const liDataInput = document.createElement('li');
-                        liDataInput.textContent = `${formatDate(new Date(entry.date))} - ${entry.category}: ${formatCurrency(entry.amount)}`;
+                        let textContent = `${formatDate(new Date(entry.date))} - ${entry.category}: ${formatCurrency(entry.amount)}`;
+                        if (entry.description) {
+                            textContent += ` (${entry.description})`;
+                        }
+                        liDataInput.textContent = textContent;
                         dataInputList.appendChild(liDataInput);
 
                         const liWeeklyBreakdown = document.createElement('li');
-                        liWeeklyBreakdown.textContent = `${entry.category}: ${formatCurrency(entry.amount)}`;
+                        let breakdownTextContent = `${entry.category}: ${formatCurrency(entry.amount)}`;
+                        if (entry.description) {
+                            breakdownTextContent += ` (${entry.description})`;
+                        }
+                        liWeeklyBreakdown.textContent = breakdownTextContent;
                         weeklyBreakdownList.appendChild(liWeeklyBreakdown);
                     });
                 }
             }
 
-            // New: Render Variable Spending Summary (Budget vs. Actual)
+            // Render Variable Spending Summary (Budget vs. Actual)
             function renderVariableSpendingSummary() {
                 const tableBody = document.getElementById('variable-spending-summary-table');
                 tableBody.innerHTML = '';
@@ -1165,7 +1156,7 @@
                 }
             }
 
-            // New: Update Historical Net Position Chart
+            // Update Historical Net Position Chart
             function updateHistoricalChart(historicalData) {
                 const ctx = document.getElementById('historicalNetPositionChart').getContext('2d');
                 if (!ctx) {
@@ -1250,22 +1241,39 @@
                     }
                 });
 
-                document.getElementById('add-actual-variable-spending-button').addEventListener('click', () => {
-                    const categoryInput = document.getElementById('input-actual-variable-category');
-                    const amountInput = document.getElementById('input-actual-variable-amount');
-                    const dateInput = document.getElementById('input-actual-variable-date');
+                const categorySelect = document.getElementById('input-actual-variable-category');
+                const descriptionInputGroup = document.getElementById('description-input-group');
+                const descriptionInput = document.getElementById('input-actual-variable-description'); // Get reference to the input itself
 
-                    const category = categoryInput.value.trim();
+                // Removed the category change listener, description input is now always visible
+                // categorySelect.addEventListener('change', () => {
+                //     const selectedCategory = categorySelect.value;
+                //     if (selectedCategory === 'Eating Out' || selectedCategory === 'Coffee') {
+                //         descriptionInputGroup.classList.remove('hidden');
+                //     } else {
+                //         descriptionInputGroup.classList.add('hidden');
+                //         descriptionInput.value = ''; // Clear description when hidden
+                //     }
+                // });
+
+                document.getElementById('add-actual-variable-spending-button').addEventListener('click', () => {
+                    const category = categorySelect.value.trim();
+                    const amountInput = document.getElementById('input-actual-variable-amount');
                     const amount = parseFloat(amountInput.value);
+                    const dateInput = document.getElementById('input-actual-variable-date');
                     const date = dateInput.value || new Date().toISOString().split('T')[0];
+                    // Get description regardless of category selection
+                    const description = descriptionInput.value.trim();
 
                     if (category && !isNaN(amount) && amount > 0) {
-                        currentData.actualVariableSpendingLog.push({ category: category, amount: amount, date: date });
+                        currentData.actualVariableSpendingLog.push({ category: category, amount: amount, date: date, description: description });
                         currentData.actualVariableSpendingLog.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-                        categoryInput.value = '';
+                        categorySelect.value = '';
                         amountInput.value = '';
                         dateInput.value = '';
+                        descriptionInput.value = ''; // Clear description after logging
+                        // descriptionInputGroup.classList.add('hidden'); // No longer hide, it's always visible
 
                         processAndRenderData(currentData);
                         renderActualVariableSpendingLog();
@@ -1322,20 +1330,6 @@
                     saveData(currentData);
                 });
                 
-                // These inputs are handled by `parseInputData` on `update-dashboard-button` click for now.
-                // If you want them to trigger a save on every input, uncomment these:
-                /*
-                document.getElementById('input-savings-target').addEventListener('input', () => {
-                    saveData(currentData);
-                });
-                document.getElementById('input-weekly-contribution').addEventListener('input', () => {
-                    saveData(currentData);
-                });
-                document.getElementById('input-savings-start-date').addEventListener('change', () => {
-                    saveData(currentData);
-                });
-                */
-
                 document.getElementById('update-dashboard-button').addEventListener('click', () => {
                     console.log('Update Dashboard button clicked');
                     const newData = parseInputData();
@@ -1344,7 +1338,7 @@
                     saveData(currentData);
                 });
 
-                // New: Archive Week button event listener
+                // Archive Week button event listener
                 document.getElementById('archive-week-button').addEventListener('click', () => {
                     if (confirm('Are you sure you want to archive the current week and clear variable spending for a new week? This will save the current week\'s summary and reset your variable spending log.')) {
                         archiveCurrentWeek();
@@ -1352,7 +1346,7 @@
                 });
             }
 
-            // New: Function to archive current week's data
+            // Function to archive current week's data
             function archiveCurrentWeek() {
                 const processed = { // Recalculate based on currentData to ensure freshest values
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
@@ -1474,12 +1468,13 @@
                             loadedData.fixedExpenses = loadedData.fixedExpenses || [];
                             
                             // Load variableExpenses, ensuring names match defaultData structure
-                            loadedData.variableExpenses = loadedData.variableExpenses || defaultData.variableExpenses.map(v => ({...v})); // Deep copy if not present
-                            // Ensure existing loaded variable expenses conform to the new structure/categories if needed
-                            // For simplicity, we'll assume loadedData.variableExpenses will generally align or get re-mapped implicitly
-                            // if categories change. For now, we rely on the defaultData for structure if missing.
-                            // If an old category exists (e.g., "Dining Out"), it will not be in defaultData, so it won't appear
-                            // in the editable budget table unless manually added to defaultData.
+                            // It's important to merge/ensure categories exist from defaultData if they were somehow lost
+                            // but preserve existing budget values for matching names.
+                            let mergedVariableExpenses = defaultData.variableExpenses.map(defaultVar => {
+                                const loadedVar = (loadedData.variableExpenses || []).find(lv => lv.name === defaultVar.name);
+                                return loadedVar ? { ...defaultVar, budget: loadedVar.budget } : { ...defaultVar };
+                            });
+                            loadedData.variableExpenses = mergedVariableExpenses;
                             
                             loadedData.savingsGoal = loadedData.savingsGoal || {};
                             loadedData.savingsGoal.actualSavingsLog = loadedData.savingsGoal.actualSavingsLog || [];
@@ -1511,7 +1506,7 @@
                             console.error("PERMISSION DENIED: Please check your Firestore Security Rules in Firebase Console. Ensure 'allow read, write: if request.auth != null;' is correctly set for the shared data path /artifacts/my-finance-dashboard/sharedData/financialDashboard.");
                         }
                         // Fallback to default data if there's a Firestore error
-                        currentData = JSON.parse(JSON.stringify(defaultData)); // Deep copy on error fallback
+                        currentData = JSON.parse(JSON.stringify(defaultData)); // Deep copy on fatal error fallback
                         populateInputsAndRender(currentData);
                     });
 
