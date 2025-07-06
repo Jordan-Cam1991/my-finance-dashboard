@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Financial Dashboard</title>
+    <title>Financial Dashboard</title>
     <!-- Firebase SDKs -->
     <script type="module">
         // Unifying all Firebase SDK versions to 11.9.1 for consistency
@@ -31,11 +31,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (e.g., sun/moon for dark mode toggle) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
     <!-- Chosen Palette: Warm Neutrals (Slate, Zinc, Stone) -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-900 */
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .chart-container {
             position: relative;
@@ -68,6 +73,7 @@
             background-color: #ffffff;
             color: #1e293b; /* slate-900 */
             font-size: 0.875rem;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
         .form-textarea {
             min-height: 120px;
@@ -122,18 +128,21 @@
             border-radius: 0.75rem;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
             border: 1px solid #e2e8f0; /* slate-200 */
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .section-header {
             font-size: 1.5rem; /* text-2xl */
             font-weight: 700; /* font-bold */
             color: #1e293b; /* slate-900 */
             margin-bottom: 1rem;
+            transition: color 0.3s ease;
         }
         .sub-section-header {
             font-size: 1.25rem; /* text-xl */
             font-weight: 600; /* font-semibold */
             color: #334155; /* slate-700 */
             margin-bottom: 0.75rem;
+            transition: color 0.3s ease;
         }
         .btn-primary {
             background-color: #4f46e5; /* indigo-600 */
@@ -236,6 +245,103 @@
             border-width: 0.2em;
             color: #4f46e5; /* indigo-600 */
         }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #1a202c; /* dark slate-900 */
+            color: #e2e8f0; /* slate-200 */
+        }
+        body.dark-mode .card {
+            background-color: #2d3748; /* dark slate-800 */
+            border-color: #4a5568; /* dark slate-700 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12);
+        }
+        body.dark-mode .section-header,
+        body.dark-mode .sub-section-header {
+            color: #f8fafc; /* slate-50 */
+        }
+        body.dark-mode .form-label {
+            color: #cbd5e1; /* slate-300 */
+        }
+        body.dark-mode .form-input,
+        body.dark-mode .form-textarea,
+        body.dark-mode .form-select {
+            background-color: #4a5568; /* slate-700 */
+            color: #f8fafc; /* slate-50 */
+            border-color: #64748b; /* slate-600 */
+        }
+        body.dark-mode .log-entry:nth-child(odd) {
+            background-color: #2d3748; /* dark slate-800 */
+        }
+        body.dark-mode .log-entry:nth-child(even) {
+            background-color: #4a5568; /* dark slate-700 */
+        }
+        body.dark-mode #variable-categories-list {
+            background-color: #2d3748; /* dark slate-800 */
+            border-color: #4a5568; /* dark slate-700 */
+        }
+        body.dark-mode .tab-button {
+            color: #cbd5e1; /* slate-300 */
+        }
+        body.dark-mode .tab-button.tab-active {
+            border-color: #6366f1; /* indigo-500 */
+            color: #818cf8; /* indigo-400 */
+        }
+        body.dark-mode .text-slate-500 {
+            color: #a0aec0; /* slate-400 */
+        }
+        body.dark-mode .text-slate-600 {
+            color: #cbd5e1; /* slate-300 */
+        }
+        body.dark-mode .text-slate-700 {
+            color: #e2e8f0; /* slate-200 */
+        }
+        body.dark-mode .text-slate-800 {
+            color: #f8fafc; /* slate-50 */
+        }
+        body.dark-mode .text-slate-900 {
+            color: #f8fafc; /* slate-50 */
+        }
+        body.dark-mode #no-actual-variable-spending-message,
+        body.dark-mode #no-actuals-message,
+        body.dark-mode #no-savings-used-message,
+        body.dark-mode #no-variable-categories-message {
+            color: #94a3b8; /* slate-400 */
+        }
+        body.dark-mode .bg-slate-100 {
+            background-color: #4a5568; /* slate-700 */
+        }
+        body.dark-mode .border-slate-200 {
+            border-color: #4a5568; /* slate-700 */
+        }
+        body.dark-mode table thead th {
+            color: #f8fafc;
+        }
+        body.dark-mode .chart-container canvas {
+            background-color: #2d3748; /* Darker background for charts */
+            border-radius: 0.5rem;
+        }
+        body.dark-mode #financial-tips-output {
+            background-color: #1e293b; /* darker indigo for tips */
+            color: #93c5fd; /* light blue for text */
+        }
+        body.dark-mode #llm-spinner .spinner-border {
+            color: #818cf8; /* indigo-400 */
+        }
+        .delete-btn {
+            background-color: transparent;
+            border: none;
+            color: #ef4444; /* red-500 */
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .delete-btn:hover {
+            background-color: rgba(239, 68, 68, 0.1); /* light red background on hover */
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -249,10 +355,19 @@
 
     <div class="container mx-auto p-4 md:p-8">
         
-        <header class="text-center mb-8">
+        <header class="text-center mb-8 relative">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Financial Dashboard</h1>
-            <!-- Removed the sentence "A clear view of our income, expenses, and savings goals." -->
+            <button id="dark-mode-toggle" class="absolute top-0 right-0 p-2 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors duration-300" aria-label="Toggle dark mode">
+                <i class="fas fa-sun" id="dark-mode-icon"></i>
+            </button>
         </header>
+
+        <!-- Moved Week Navigation Controls Here -->
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-6 card p-4">
+            <button id="prev-week-btn" class="btn-secondary px-4 py-2 rounded-md"><i class="fas fa-arrow-left"></i> Previous Week</button>
+            <input type="date" id="week-selector" class="form-input text-center max-w-xs" aria-label="Select Week">
+            <button id="next-week-btn" class="btn-secondary px-4 py-2 rounded-md">Next Week <i class="fas fa-arrow-right"></i></button>
+        </div>
 
         <main>
             <section id="key-metrics" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
@@ -286,7 +401,7 @@
                 <section id="dashboard-overview" class="tab-pane">
                     <div class="card mb-6">
                         <h2 class="section-header">Log Actual Weekly Variable Spending</h2>
-                        <p class="text-sm text-slate-500 mb-4">Enter individual variable purchases made this week to track actual spending.</p>
+                        <p class="text-sm text-slate-500 mb-4">Enter individual variable purchases made for the selected week to track actual spending.</p>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
                             <div>
                                 <label for="input-actual-variable-category" class="form-label text-sm">Category</label>
@@ -303,7 +418,7 @@
                                 <input type="text" id="input-actual-variable-description" class="form-input text-sm" placeholder="e.g. Had lunch with friends" aria-label="Spending Description">
                             </div>
                             <div>
-                                <label for="input-actual-variable-date" class="form-label text-sm">Date (Optional)</label>
+                                <label for="input-actual-variable-date" class="form-label text-sm">Date</label>
                                 <input type="date" id="input-actual-variable-date" class="form-input text-sm" aria-label="Spending Date">
                             </div>
                             <div class="md:col-span-4 flex justify-end">
@@ -312,17 +427,12 @@
                                 </button>
                             </div>
                         </div>
-                        <!-- Removed quick-add-variable-spending-buttons div -->
                         <div id="actual-variable-spending-log-display" class="mt-4 p-3 rounded-md max-h-40 overflow-y-auto text-sm text-slate-600 border border-slate-200">
                             <p class="text-center text-slate-400" id="no-actual-variable-spending-message">No actual variable spending logged yet this week.</p>
                             <ul id="actual-variable-spending-list" class="space-y-1">
                                 <!-- Logged entries will appear here -->
                             </ul>
                         </div>
-                        <button type="button" id="reset-variable-spending-button" class="btn-danger mt-4">
-                            Reset Weekly Variable Spending
-                        </button>
-                        <div id="reset-variable-spending-message" class="message-box hidden" role="alert"></div>
                     </div>
 
                     <div class="card mb-6">
@@ -435,6 +545,20 @@
                             <div class="chart-container">
                                 <canvas id="expensesBarChart"></canvas>
                             </div>
+                        </div>
+                    </div>
+                    <div class="card mt-6">
+                        <h2 class="section-header">Expense Trend Analysis</h2>
+                        <p class="text-sm text-slate-500 mb-4">Track spending trends for specific categories over time.</p>
+                        <div class="mb-4">
+                            <label for="trend-category-select" class="form-label text-sm">Select Category for Trend:</label>
+                            <select id="trend-category-select" class="form-input text-sm">
+                                <option value="">All Categories</option>
+                                <!-- Categories populated by JS -->
+                            </select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="expenseTrendChart"></canvas>
                         </div>
                     </div>
                 </section>
@@ -608,6 +732,28 @@
     <div id="toast-container"></div>
 
     <script>
+        // Helper to get the start of the week (Wednesday) for a given date
+        window.getStartOfWeek = function(date) {
+            const d = new Date(date);
+            const day = d.getDay(); // Sunday - 0, Monday - 1, ..., Wednesday - 3, ..., Saturday - 6
+            let diff = d.getDate() - day + (day === 0 ? -4 : 3); // Adjust for Wednesday (3)
+            if (day < 3) { // If current day is before Wednesday (Sun, Mon, Tue)
+                diff -= 7; // Go back to last Wednesday
+            }
+            const startOfWeek = new Date(d.setDate(diff));
+            startOfWeek.setHours(0, 0, 0, 0); // Set to midnight to avoid time issues
+            return startOfWeek;
+        };
+
+        // Helper to format date toYYYY-MM-DD for input type="date"
+        window.toYYYYMMDD = function(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             // Firebase setup
             const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot, getAnalytics } = window.firebase;
@@ -640,6 +786,7 @@
             };
 
             let currentData = {}; 
+            let currentViewDate = new Date(); // New: Track the currently viewed week
 
             const getWeeklyAmount = (amount, freq) => {
                 switch (freq.toLowerCase()) {
@@ -681,12 +828,12 @@
                     actualSavingsUsedLog: [], // Cleared
                     milestonesReached: [] // New: Track reached milestones
                 },
-                actualVariableSpendingLog: [], // Cleared
-                historicalSummaries: [] // Cleared
+                actualVariableSpendingLog: [], // Cleared for current week
+                historicalSummaries: [] // Cleared, now includes spending breakdown
             };
 
 
-            let combinedWeeklyChart, expensesBarChart, savingsLineChart, historicalNetPositionChart; 
+            let combinedWeeklyChart, expensesBarChart, savingsLineChart, historicalNetPositionChart, expenseTrendChart; 
 
             async function saveData(data) {
                 if (!db) { 
@@ -824,10 +971,15 @@
                 } else {
                     noMessage.classList.add('hidden');
                     const sortedLogs = [...currentData.savingsGoal.actualSavingsLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
-                    sortedLogs.forEach(entry => {
+                    sortedLogs.forEach((entry, index) => {
                         const li = document.createElement('li');
-                        li.className = 'p-2 log-entry';
-                        li.textContent = `${formatDate(new Date(entry.date))}: ${formatCurrency(entry.amount)}`;
+                        li.className = 'p-2 log-entry flex justify-between items-center';
+                        li.innerHTML = `
+                            <span>${formatDate(new Date(entry.date))}: ${formatCurrency(entry.amount)}</span>
+                            <button type="button" class="delete-btn" data-log-type="savings" data-index="${index}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `;
                         list.appendChild(li);
                     });
                 }
@@ -843,16 +995,22 @@
                 } else {
                     noMessage.classList.add('hidden');
                     const sortedLogs = [...currentData.savingsGoal.actualSavingsUsedLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
-                    sortedLogs.forEach(entry => {
+                    sortedLogs.forEach((entry, index) => {
                         const li = document.createElement('li');
-                        li.className = 'p-2 log-entry';
-                        li.textContent = `${formatDate(new Date(entry.date))} - ${entry.reason}: ${formatCurrency(entry.amount)}`;
+                        li.className = 'p-2 log-entry flex justify-between items-center';
+                        li.innerHTML = `
+                            <span>${formatDate(new Date(entry.date))} - ${entry.reason}: ${formatCurrency(entry.amount)}</span>
+                            <button type="button" class="delete-btn" data-log-type="savings-used" data-index="${index}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `;
                         list.appendChild(li);
                     });
                 }
             }
 
-            function renderActualVariableSpendingLog() {
+            // Function to render actual variable spending for the CURRENTLY VIEWED week
+            function renderActualVariableSpendingLog(weekStartDate) {
                 const dataInputList = document.getElementById('actual-variable-spending-list');
                 const weeklyBreakdownList = document.getElementById('weekly-actual-variable-spending-list'); 
                 const noMessageDataInput = document.getElementById('no-actual-variable-spending-message');
@@ -860,19 +1018,43 @@
                 dataInputList.innerHTML = ''; 
                 weeklyBreakdownList.innerHTML = ''; 
 
-                if (!currentData.actualVariableSpendingLog || currentData.actualVariableSpendingLog.length === 0) {
+                const startOfWeek = window.getStartOfWeek(weekStartDate);
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Tuesday)
+                endOfWeek.setHours(23, 59, 59, 999); // Set to end of day
+
+                const filteredSpending = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                    const entryDate = new Date(entry.date + 'T00:00:00'); // Ensure comparison is date-only
+                    return entryDate >= startOfWeek && entryDate <= endOfWeek;
+                });
+
+                if (filteredSpending.length === 0) {
                     noMessageDataInput.classList.remove('hidden');
                 } else {
                     noMessageDataInput.classList.add('hidden');
-                    const sortedLogs = [...currentData.actualVariableSpendingLog].sort((a, b) => new Date(b.date) - new Date(a.date)); 
-                    sortedLogs.forEach(entry => {
+                    // Sort by date descending for display
+                    const sortedLogs = [...filteredSpending].sort((a, b) => new Date(b.date) - new Date(a.date)); 
+                    sortedLogs.forEach((entry, index) => {
+                        // Find the original index in the unfiltered array to correctly delete
+                        const originalIndex = currentData.actualVariableSpendingLog.findIndex(item => 
+                            item.category === entry.category && 
+                            item.amount === entry.amount && 
+                            item.date === entry.date && 
+                            item.description === entry.description
+                        );
+
                         const liDataInput = document.createElement('li');
-                        liDataInput.className = 'p-2 log-entry';
-                        let textContent = `${formatDate(new Date(entry.date))} - ${entry.category}: ${formatCurrency(entry.amount)}`;
+                        liDataInput.className = 'p-2 log-entry flex justify-between items-center';
+                        let textContent = `${formatDate(new Date(entry.date))}: ${entry.category} - ${formatCurrency(entry.amount)}`;
                         if (entry.description) {
                             textContent += ` (${entry.description})`;
                         }
-                        liDataInput.textContent = textContent;
+                        liDataInput.innerHTML = `
+                            <span>${textContent}</span>
+                            <button type="button" class="delete-btn" data-log-type="variable-spending" data-index="${originalIndex}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `;
                         dataInputList.appendChild(liDataInput);
 
                         const liWeeklyBreakdown = document.createElement('li');
@@ -886,29 +1068,39 @@
                 }
             }
 
-            // Render Variable Spending Summary (Budget vs. Actual)
-            function renderVariableSpendingSummary() {
+            // Render Variable Spending Summary (Budget vs. Actual) for the CURRENTLY VIEWED week
+            function renderVariableSpendingSummary(weekStartDate) {
                 const tableBody = document.getElementById('variable-spending-summary-table');
                 tableBody.innerHTML = '';
 
                 let totalBudgeted = 0;
                 let totalActual = 0;
 
-                // Create a map of actual spending by category for easy lookup
-                const actualSpendingByCategory = currentData.actualVariableSpendingLog.reduce((acc, item) => {
+                const startOfWeek = window.getStartOfWeek(weekStartDate);
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23, 59, 59, 999);
+
+
+                // Filter actual spending for the current week
+                const filteredSpending = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                    const entryDate = new Date(entry.date + 'T00:00:00');
+                    return entryDate >= startOfWeek && entryDate <= endOfWeek;
+                });
+
+                // Create a map of actual spending by category for the filtered week
+                const actualSpendingByCategory = filteredSpending.reduce((acc, item) => {
                     acc[item.category] = (acc[item.category] || 0) + item.amount;
                     return acc;
                 }, {});
 
                 // Iterate through budgeted categories to build the summary table
-                // Use currentData.variableExpenses for categories and their budgets
                 currentData.variableExpenses.forEach(budgetCategory => {
                     const budgetedAmount = budgetCategory.budget;
                     const actualAmount = actualSpendingByCategory[budgetCategory.name] || 0;
                     const difference = budgetedAmount - actualAmount;
 
                     const row = document.createElement('tr');
-                    // Add class for negative difference
                     const differenceClass = difference < 0 ? 'text-overrun' : '';
 
                     row.innerHTML = `
@@ -925,11 +1117,47 @@
                     totalActual += actualAmount;
                 });
 
+                // Add row for Previous Week Overspend/Underspend
+                const prevWeekStart = new Date(startOfWeek);
+                prevWeekStart.setDate(startOfWeek.getDate() - 7);
+                const previousWeekSummary = currentData.historicalSummaries.find(summary => 
+                    new Date(summary.date + 'T00:00:00').getTime() === prevWeekStart.getTime()
+                );
+
+                if (previousWeekSummary && typeof previousWeekSummary.netPosition !== 'undefined') {
+                    const prevNetPosition = previousWeekSummary.netPosition;
+                    let label = '';
+                    let value = 0;
+                    let valueClass = '';
+
+                    if (prevNetPosition < 0) {
+                        label = 'Previous Week Overspend';
+                        value = Math.abs(prevNetPosition);
+                        valueClass = 'text-overrun';
+                    } else if (prevNetPosition > 0) {
+                        label = 'Previous Week Underspend';
+                        value = prevNetPosition;
+                        valueClass = 'text-green-600';
+                    }
+
+                    if (value !== 0) {
+                        const prevWeekRow = document.createElement('tr');
+                        prevWeekRow.className = 'border-t border-slate-200';
+                        prevWeekRow.innerHTML = `
+                            <td class="p-3 font-semibold">${label}</td>
+                            <td class="p-3 text-right"></td>
+                            <td class="p-3 text-right"></td>
+                            <td class="p-3 text-right font-semibold ${valueClass}">${formatCurrency(value)}</td>
+                        `;
+                        tableBody.appendChild(prevWeekRow);
+                    }
+                }
+
+
                 document.getElementById('total-variable-budgeted').textContent = formatCurrency(totalBudgeted);
                 document.getElementById('total-variable-actual').textContent = formatCurrency(totalActual);
                 document.getElementById('total-variable-difference').textContent = formatCurrency(totalBudgeted - totalActual);
 
-                // Apply overrun alert to the main "Total Actual Variable Spending" on Key Metrics and Weekly Breakdown
                 const totalActualElement = document.getElementById('combined-actual-variable-spending');
                 
                 if (totalActual > totalBudgeted) {
@@ -938,18 +1166,15 @@
                     totalActualElement.classList.remove('text-overrun');
                 }
 
-                // Attach event listeners to the new input fields
                 document.querySelectorAll('.budgeted-variable-amount').forEach(input => {
                     input.addEventListener('input', (event) => {
                         const categoryName = event.target.dataset.category;
-                        const newBudget = parseFloat(event.target.value) || 0; // Handle empty/invalid input as 0
+                        const newBudget = parseFloat(event.target.value) || 0;
 
-                        // Find and update the budget in currentData
                         const categoryIndex = currentData.variableExpenses.findIndex(cat => cat.name === categoryName);
                         if (categoryIndex !== -1) {
                             currentData.variableExpenses[categoryIndex].budget = newBudget;
-                            // Re-render and save data immediately after a budget change
-                            processAndRenderData(currentData);
+                            processAndRenderData(currentData, currentViewDate); // Re-render with current view date
                             saveData(currentData);
                         }
                     });
@@ -959,13 +1184,21 @@
             // Function to populate the variable expense category dropdown
             function populateVariableCategoryDropdown() {
                 const select = document.getElementById('input-actual-variable-category');
+                const trendSelect = document.getElementById('trend-category-select');
+                
                 select.innerHTML = '<option value="">Select Category</option>'; // Clear existing options
+                trendSelect.innerHTML = '<option value="">All Categories</option>';
 
                 currentData.variableExpenses.forEach(category => {
                     const option = document.createElement('option');
                     option.value = category.name;
                     option.textContent = category.name;
                     select.appendChild(option);
+
+                    const trendOption = document.createElement('option');
+                    trendOption.value = category.name;
+                    trendOption.textContent = category.name;
+                    trendSelect.appendChild(trendOption);
                 });
             }
 
@@ -996,7 +1229,7 @@
                             currentData.variableExpenses = currentData.variableExpenses.filter(cat => cat.name !== categoryToRemove);
                             // Also remove any actual spending associated with this category to prevent errors
                             currentData.actualVariableSpendingLog = currentData.actualVariableSpendingLog.filter(log => log.category !== categoryToRemove);
-                            processAndRenderData(currentData);
+                            processAndRenderData(currentData, currentViewDate); // Re-render with current view date
                             saveData(currentData);
                             showToast(`Category "${categoryToRemove}" removed.`, 'info');
                         });
@@ -1057,9 +1290,15 @@
                 return parsed;
             }
 
-            function processAndRenderData(dataToUse) {
+            // Main rendering function, now takes a view date
+            function processAndRenderData(dataToUse, viewDate) {
                 console.log("Starting processAndRenderData...");
                 currentData = dataToUse; 
+                currentViewDate = viewDate; // Update the global view date
+
+                // Set the week selector input to the start of the currently viewed week
+                const startOfViewWeek = window.getStartOfWeek(currentViewDate);
+                document.getElementById('week-selector').value = window.toYYYYMMDD(startOfViewWeek);
 
                 // Directly use currentData.savingsGoal.current for the input field
                 document.getElementById('input-savings-current').value = currentData.savingsGoal.current; 
@@ -1071,18 +1310,36 @@
                         weekly: getWeeklyAmount(e.amount, e.freq)
                     })),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
-                    // totalVariableBudget is now calculated from the budgets stored in currentData.variableExpenses
                     get totalVariableBudget() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); }, 
-                    get totalActualVariableSpending() { return currentData.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0); }, 
-                    get totalExpensesWeekly() { return this.totalFixedWeekly + this.totalActualVariableSpending; }, 
                 };
+
+                // Filter actual variable spending for the current view week
+                const endOfWeek = new Date(startOfViewWeek);
+                endOfWeek.setDate(startOfViewWeek.getDate() + 6);
+                endOfWeek.setHours(23, 59, 59, 999);
+
+
+                const actualVariableSpendingForViewWeek = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                    const entryDate = new Date(entry.date + 'T00:00:00');
+                    return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
+                }).reduce((sum, e) => sum + e.amount, 0);
+                processed.totalActualVariableSpending = actualVariableSpendingForViewWeek;
+                processed.totalExpensesWeekly = processed.totalFixedWeekly + processed.totalActualVariableSpending;
+
 
                 // Calculate carry-over from the last archived week
                 let carryOver = 0;
                 if (currentData.historicalSummaries && currentData.historicalSummaries.length > 0) {
-                    carryOver = currentData.historicalSummaries[currentData.historicalSummaries.length - 1].netPosition;
+                    // Find the most recent archived week *before* the current view week
+                    const relevantHistoricalSummaries = currentData.historicalSummaries.filter(summary => {
+                        const summaryDate = new Date(summary.date + 'T00:00:00');
+                        return summaryDate < startOfViewWeek;
+                    }).sort((a,b) => new Date(b.date) - new Date(a.date)); // Sort descending by date
+
+                    if (relevantHistoricalSummaries.length > 0) {
+                        carryOver = relevantHistoricalSummaries[0].netPosition;
+                    }
                 }
-                // Ensure the element exists before setting textContent
                 const combinedCarryOverElement = document.getElementById('combined-carry-over');
                 if (combinedCarryOverElement) {
                     combinedCarryOverElement.textContent = formatCurrency(carryOver);
@@ -1096,11 +1353,9 @@
                 document.getElementById('metric-expenses').textContent = formatCurrency(processed.totalFixedWeekly + processed.totalActualVariableSpending); 
                 document.getElementById('metric-savings').textContent = formatCurrency(currentData.savingsGoal.weeklyContribution);
                 
-                // Adjusted net weekly position to include carry-over
                 const netWeeklyPosition = currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution + carryOver;
                 const metricNetElement = document.getElementById('metric-net');
                 metricNetElement.textContent = formatCurrency(netWeeklyPosition);
-                // Dynamic color for Net Weekly Position
                 metricNetElement.classList.remove('text-green-600', 'text-red-600', 'text-slate-700');
                 if (netWeeklyPosition > 0) {
                     metricNetElement.classList.add('text-green-600');
@@ -1117,7 +1372,6 @@
                 document.getElementById('combined-actual-variable-spending').textContent = formatCurrency(processed.totalActualVariableSpending);
                 document.getElementById('combined-savings-contribution').textContent = formatCurrency(currentData.savingsGoal.weeklyContribution);
                 
-                // Adjusted combined disposable to include carry-over
                 const combinedDisposable = currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution + carryOver;
                 document.getElementById('combined-disposable').textContent = formatCurrency(combinedDisposable);
 
@@ -1145,7 +1399,11 @@
 
                 const allExpenseCategories = [
                     ...processed.fixedExpensesWeekly.map(e => ({ name: e.category, weekly: e.weekly })), 
-                    ...currentData.actualVariableSpendingLog.map(v => ({ name: v.category, weekly: v.amount })) 
+                    // Use actual variable spending for the VIEWED week for this chart
+                    ...actualVariableSpendingForViewWeek > 0 ? currentData.actualVariableSpendingLog.filter(entry => {
+                        const entryDate = new Date(entry.date + 'T00:00:00');
+                        return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
+                    }).map(v => ({ name: v.category, weekly: v.amount })) : []
                 ];
                 const aggregatedCategories = allExpenseCategories.reduce((acc, item) => {
                     acc[item.name] = (acc[item.name] || 0) + item.weekly;
@@ -1155,7 +1413,7 @@
                 const expenseCategoriesForChart = Object.entries(aggregatedCategories)
                     .map(([name, weekly]) => ({ name, weekly }))
                     .filter(e => e.weekly && e.weekly > 0)
-                    .sort((a, b) => b.weekly - a.weekly)
+                    .sort((a, b) => b.weekly - a.weekly) 
                     .slice(0, 7); 
 
                 updateBarChart('expensesBarChart', expenseCategoriesForChart.map(e => e.name), expenseCategoriesForChart.map(e => e.weekly));
@@ -1207,7 +1465,6 @@
 
                 // Check for savings milestones
                 const milestones = [10000, 20000, 30000]; // Example milestones
-                const savingsMilestoneMessage = document.getElementById('savings-milestone-message');
                 let newMilestoneReached = false;
                 milestones.forEach(milestone => {
                     if (current >= milestone && !currentData.savingsGoal.milestonesReached.includes(milestone)) {
@@ -1217,17 +1474,16 @@
                     }
                 });
                 if (newMilestoneReached) {
-                    // If a new milestone was reached, ensure data is saved to persist the milestone
                     saveData(currentData);
                 }
 
-
                 // Call new rendering functions for new features
-                renderVariableSpendingSummary();
+                renderActualVariableSpendingLog(currentViewDate); // Pass currentViewDate
+                renderVariableSpendingSummary(currentViewDate); // Pass currentViewDate
                 updateHistoricalChart(currentData.historicalSummaries);
                 populateVariableCategoryDropdown(); // Update dropdown with current categories
                 renderVariableCategoriesManagement(); // Update management list
-                // Removed call to createQuickAddButtons();
+                updateExpenseTrendChart(currentData.historicalSummaries, document.getElementById('trend-category-select').value); // Update trend chart
                 console.log("Finished processAndRenderData.");
             }
 
@@ -1286,8 +1542,8 @@
                                 },
                                 y: {
                                     autoSkip: false,
-                                    maxRotation: 0,
-                                    minRotation: 0
+                                    minRotation: 0,
+                                    maxRotation: 0
                                 }
                             }
                         }
@@ -1337,8 +1593,8 @@
                                 y: {
                                     ticks: {
                                         autoSkip: false,
-                                        maxRotation: 0,
                                         minRotation: 0,
+                                        maxRotation: 0,
                                         callback: function(value, index, values) {
                                             const label = this.getLabelForValue(value);
                                             const maxLength = 16;
@@ -1398,9 +1654,9 @@
                                 },
                                 x: {
                                     ticks: {
-                                        maxRotation: 0,
-                                        minRotation: 0,
                                         autoSkip: true,
+                                        minRotation: 0,
+                                        maxRotation: 0,
                                         maxTicksLimit: 6
                                     }
                                 }
@@ -1454,9 +1710,77 @@
                             },
                             x: {
                                 ticks: {
-                                    maxRotation: 45,
-                                    minRotation: 0,
                                     autoSkip: true,
+                                    minRotation: 0,
+                                    maxRotation: 45,
+                                    maxTicksLimit: 7
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // New: Update Expense Trend Chart
+            function updateExpenseTrendChart(historicalData, selectedCategory) {
+                const ctx = document.getElementById('expenseTrendChart').getContext('2d');
+                if (!ctx) {
+                    console.error('Canvas context not found for expenseTrendChart.');
+                    return;
+                }
+                if (expenseTrendChart) {
+                    expenseTrendChart.destroy();
+                }
+
+                const labels = historicalData.map(item => formatDate(item.date));
+                let data = [];
+
+                if (selectedCategory && selectedCategory !== "") {
+                    // Filter for a specific category
+                    data = historicalData.map(item => {
+                        return item.actualVariableSpendingBreakdown ? (item.actualVariableSpendingBreakdown[selectedCategory] || 0) : 0;
+                    });
+                } else {
+                    // Sum all categories for "All Categories"
+                    data = historicalData.map(item => {
+                        if (item.actualVariableSpendingBreakdown) {
+                            return Object.values(item.actualVariableSpendingBreakdown).reduce((sum, val) => sum + val, 0);
+                        }
+                        return 0;
+                    });
+                }
+
+                expenseTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: selectedCategory ? `${selectedCategory} Spending` : 'Total Variable Spending',
+                            data: data,
+                            borderColor: '#f97316', // orange-500
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#f97316',
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        ...chartDefaults,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => formatCurrency(value)
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    autoSkip: true,
+                                    minRotation: 0,
+                                    maxRotation: 45,
                                     maxTicksLimit: 7
                                 }
                             }
@@ -1490,7 +1814,7 @@
                         actualAmountInput.value = '';
                         actualDateInput.value = '';
 
-                        processAndRenderData(currentData);
+                        processAndRenderData(currentData, currentViewDate); // Re-render with current view date
                         renderActualSavingsLog(); 
                         saveData(currentData);
                         showToast('Saving logged successfully!', 'success');
@@ -1500,16 +1824,50 @@
                     }
                 });
 
+                // Event delegation for deleting savings log entries
+                document.getElementById('actual-savings-list').addEventListener('click', (event) => {
+                    if (event.target.closest('.delete-btn')) {
+                        const button = event.target.closest('.delete-btn');
+                        const index = parseInt(button.dataset.index);
+                        if (!isNaN(index) && index >= 0 && index < currentData.savingsGoal.actualSavingsLog.length) {
+                            const deletedEntry = currentData.savingsGoal.actualSavingsLog.splice(index, 1)[0];
+                            currentData.savingsGoal.current -= deletedEntry.amount; // Deduct the amount from current savings
+                            processAndRenderData(currentData, currentViewDate);
+                            renderActualSavingsLog();
+                            saveData(currentData);
+                            showToast('Saving entry deleted.', 'info');
+                        }
+                    }
+                });
+
+                // Event delegation for deleting savings used log entries
+                document.getElementById('actual-savings-used-log-display').addEventListener('click', (event) => {
+                    if (event.target.closest('.delete-btn')) {
+                        const button = event.target.closest('.delete-btn');
+                        const index = parseInt(button.dataset.index);
+                        if (!isNaN(index) && index >= 0 && index < currentData.savingsGoal.actualSavingsUsedLog.length) {
+                            const deletedEntry = currentData.savingsGoal.actualSavingsUsedLog.splice(index, 1)[0];
+                            currentData.savingsGoal.current += deletedEntry.amount; // Add back the amount to current savings
+                            processAndRenderData(currentData, currentViewDate);
+                            renderActualSavingsUsedLog();
+                            saveData(currentData);
+                            showToast('Savings used entry deleted.', 'info');
+                        }
+                    }
+                });
+
                 const categorySelect = document.getElementById('input-actual-variable-category');
                 const descriptionInput = document.getElementById('input-actual-variable-description'); 
+                const dateInput = document.getElementById('input-actual-variable-date'); // Get the date input element
 
                 document.getElementById('add-actual-variable-spending-button').addEventListener('click', () => {
                     const category = categorySelect.value.trim();
                     const amountInput = document.getElementById('input-actual-variable-amount');
                     const amount = parseFloat(amountInput.value);
-                    const dateInput = document.getElementById('input-actual-variable-date');
-                    const date = dateInput.value || new Date().toISOString().split('T')[0];
+                    const date = dateInput.value || window.toYYYYMMDD(new Date()); // Default to today's date if not specified
                     const description = descriptionInput.value.trim();
+
+                    console.log('Attempting to log spending:', { category, amount, date, description });
 
                     if (category && !isNaN(amount) && amount > 0) {
                         currentData.actualVariableSpendingLog.push({ category: category, amount: amount, date: date, description: description });
@@ -1517,12 +1875,10 @@
 
                         categorySelect.value = '';
                         amountInput.value = '';
-                        dateInput.value = '';
+                        dateInput.value = window.toYYYYMMDD(new Date()); // Reset to today's date after logging
                         descriptionInput.value = ''; 
 
-                        processAndRenderData(currentData);
-                        renderActualVariableSpendingLog();
-                        renderVariableSpendingSummary(); 
+                        processAndRenderData(currentData, currentViewDate); // Re-render with current view date
                         saveData(currentData);
                         showToast('Spending logged successfully!', 'success');
                     } else {
@@ -1531,65 +1887,17 @@
                     }
                 });
 
-                document.getElementById('reset-variable-spending-button').addEventListener('click', () => {
-                    const messageBox = document.getElementById('reset-variable-spending-message');
-                    // showMessage('reset-variable-spending-message', 'Are you sure you want to reset all logged actual variable spending for the week? Click again to confirm.', 'info', 5000);
-                    showToast('Click again to confirm resetting weekly variable spending.', 'info', 5000);
-                    
-                    // Simple double-click confirmation
-                    let clickCount = 0;
-                    const confirmReset = () => {
-                        clickCount++;
-                        if (clickCount === 2) {
-                            currentData.actualVariableSpendingLog = [];
-                            processAndRenderData(currentData);
-                            renderActualVariableSpendingLog();
-                            renderVariableSpendingSummary(); 
+                // Event delegation for deleting variable spending log entries
+                document.getElementById('actual-variable-spending-log-display').addEventListener('click', (event) => {
+                    if (event.target.closest('.delete-btn')) {
+                        const button = event.target.closest('.delete-btn');
+                        const index = parseInt(button.dataset.index);
+                        if (!isNaN(index) && index >= 0 && index < currentData.actualVariableSpendingLog.length) {
+                            currentData.actualVariableSpendingLog.splice(index, 1);
+                            processAndRenderData(currentData, currentViewDate);
                             saveData(currentData);
-                            // showMessage('reset-variable-spending-message', 'Weekly variable spending reset!', 'success');
-                            showToast('Weekly variable spending reset!', 'success');
-                            console.log('Actual variable spending log reset.');
-                            messageBox.removeEventListener('click', confirmReset); // Remove listener after reset
-                        } else if (clickCount === 1) {
-                            // showMessage('reset-variable-spending-message', 'Click again to confirm reset.', 'info', 5000);
-                            showToast('Click again to confirm reset.', 'info', 5000);
+                            showToast('Spending entry deleted.', 'info');
                         }
-                    };
-                    messageBox.addEventListener('click', confirmReset, { once: true }); // Listen for the second click
-                    setTimeout(() => { // Reset click count if not clicked again within 5 seconds
-                        if (clickCount < 2) {
-                            messageBox.removeEventListener('click', confirmReset);
-                            // showMessage('reset-variable-spending-message', 'Reset cancelled.', 'info', 1000);
-                            showToast('Reset cancelled.', 'info', 1000);
-                        }
-                    }, 5000);
-                });
-
-                document.getElementById('add-savings-used-button').addEventListener('click', () => {
-                    const amountInput = document.getElementById('input-savings-used-amount');
-                    const reasonInput = document.getElementById('input-savings-used-reason');
-                    const dateInput = document.getElementById('input-savings-used-date');
-                    
-                    const amount = parseFloat(amountInput.value);
-                    const reason = reasonInput.value.trim();
-                    const date = dateInput.value || new Date().toISOString().split('T')[0];
-
-                    if (!isNaN(amount) && amount > 0 && reason) {
-                        currentData.savingsGoal.actualSavingsUsedLog.push({ date: date, amount: amount, reason: reason });
-                        currentData.savingsGoal.actualSavingsUsedLog.sort((a, b) => new Date(a.date) - new Date(b.date));
-                        currentData.savingsGoal.current -= amount; 
-
-                        amountInput.value = '';
-                        reasonInput.value = '';
-                        dateInput.value = '';
-
-                        processAndRenderData(currentData);
-                        renderActualSavingsUsedLog();
-                        saveData(currentData);
-                        showToast('Savings use logged!', 'success');
-                    } else {
-                        showToast('Please enter a positive amount and reason for savings use.', 'error');
-                        console.warn('Invalid savings used entry. Please fill in amount, reason, and ensure amount is positive.');
                     }
                 });
 
@@ -1606,35 +1914,30 @@
                     console.log('Update Dashboard button clicked');
                     const newData = parseInputData();
                     currentData = newData; 
-                    processAndRenderData(currentData);
+                    processAndRenderData(currentData, currentViewDate); // Re-render with current view date
                     saveData(currentData);
                     showToast('Dashboard updated successfully!', 'success');
                 });
 
                 // Archive Week button event listener
                 document.getElementById('archive-week-button').addEventListener('click', () => {
-                    const messageBox = document.getElementById('archive-week-message');
-                    // showMessage('archive-week-message', 'Are you sure you want to archive the current week? Click again to confirm.', 'info', 5000);
                     showToast('Click again to confirm archiving the current week.', 'info', 5000);
                     
                     let clickCount = 0;
                     const confirmArchive = () => {
                         clickCount++;
                         if (clickCount === 2) {
-                            archiveCurrentWeek();
-                            // showMessage('archive-week-message', 'Week archived and new week started!', 'success');
+                            archiveCurrentWeek(currentViewDate); // Pass the week to archive
                             showToast('Week archived and new week started!', 'success');
-                            messageBox.removeEventListener('click', confirmArchive);
                         } else if (clickCount === 1) {
-                            // showMessage('archive-week-message', 'Click again to confirm archiving.', 'info', 5000);
                             showToast('Click again to confirm archiving.', 'info', 5000);
                         }
                     };
-                    messageBox.addEventListener('click', confirmArchive, { once: true });
+                    const archiveButton = document.getElementById('archive-week-button');
+                    archiveButton.addEventListener('click', confirmArchive, { once: true });
                     setTimeout(() => {
                         if (clickCount < 2) {
-                            messageBox.removeEventListener('click', confirmArchive);
-                            // showMessage('archive-week-message', 'Archive cancelled.', 'info', 1000);
+                            archiveButton.removeEventListener('click', confirmArchive);
                             showToast('Archive cancelled.', 'info', 1000);
                         }
                     }, 5000);
@@ -1653,7 +1956,7 @@
                         }
                         currentData.variableExpenses.push({ name: newCategoryName, budget: 0 });
                         newCategoryInput.value = '';
-                        processAndRenderData(currentData);
+                        processAndRenderData(currentData, currentViewDate); // Re-render with current view date
                         saveData(currentData);
                         showToast(`Category "${newCategoryName}" added!`, 'success');
                     } else {
@@ -1688,11 +1991,22 @@
                         // Prepare data for the prompt
                         const income = currentData.income.combined;
                         const totalFixedExpenses = currentData.fixedExpenses.reduce((sum, e) => sum + getWeeklyAmount(e.amount, e.freq), 0);
-                        const totalActualVariableSpending = currentData.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0);
+                        
+                        // Use actual variable spending for the CURRENTLY VIEWED week for the prompt
+                        const startOfViewWeek = window.getStartOfWeek(currentViewDate);
+                        const endOfWeek = new Date(startOfViewWeek);
+                        endOfWeek.setDate(startOfViewWeek.getDate() + 6);
+                        endOfWeek.setHours(23, 59, 59, 999);
+
+                        const totalActualVariableSpending = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                            const entryDate = new Date(entry.date + 'T00:00:00');
+                            return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
+                        }).reduce((sum, e) => sum + e.amount, 0);
+
                         const weeklySavingsGoal = currentData.savingsGoal.weeklyContribution;
                         const netPosition = income - totalFixedExpenses - totalActualVariableSpending - weeklySavingsGoal;
 
-                        let prompt = `Given the following weekly financial data:
+                        let prompt = `Given the following weekly financial data for the week starting ${formatDate(startOfViewWeek)}:
                         - Combined Weekly Income: ${formatCurrency(income)}
                         - Total Fixed Expenses: ${formatCurrency(totalFixedExpenses)}
                         - Total Actual Variable Spending: ${formatCurrency(totalActualVariableSpending)}
@@ -1701,8 +2015,11 @@
 
                         Provide 3 actionable and practical financial tips to improve the net position, reduce expenses, or reach the savings goal faster. Focus on household budgeting advice. Present the tips as a concise, numbered list.`;
 
-                        // Add details about top variable spending if available
-                        const actualSpendingByCategory = currentData.actualVariableSpendingLog.reduce((acc, item) => {
+                        // Add details about top variable spending if available for the CURRENTLY VIEWED week
+                        const actualSpendingByCategory = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                            const entryDate = new Date(entry.date + 'T00:00:00');
+                            return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
+                        }).reduce((acc, item) => {
                             acc[item.category] = (acc[item.category] || 0) + item.amount;
                             return acc;
                         }, {});
@@ -1719,7 +2036,8 @@
                         chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
                         const payload = { contents: chatHistory };
-                        const apiKey = ""; // Canvas will automatically provide the API key
+                        // Use __api_key if available from the Canvas environment, otherwise fallback to empty string
+                        const apiKey = typeof __api_key !== 'undefined' ? __api_key : ''; 
                         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                         const response = await fetch(apiUrl, {
@@ -1757,10 +2075,59 @@
                         llmSpinner.classList.add('hidden'); // Hide spinner
                     }
                 });
+
+                // New: Dark Mode Toggle Listener
+                document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+                    document.body.classList.toggle('dark-mode');
+                    const isDarkMode = document.body.classList.contains('dark-mode');
+                    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                    document.getElementById('dark-mode-icon').className = 'fas fa-moon';
+                    // Re-render charts to adapt to new theme colors (if any)
+                    processAndRenderData(currentData, currentViewDate);
+                });
+
+                // New: Week navigation listeners
+                document.getElementById('prev-week-btn').addEventListener('click', () => {
+                    const newDate = new Date(currentViewDate);
+                    newDate.setDate(newDate.getDate() - 7);
+                    processAndRenderData(currentData, newDate);
+                });
+
+                document.getElementById('next-week-btn').addEventListener('click', () => { 
+                    const newDate = new Date(currentViewDate);
+                    newDate.setDate(newDate.getDate() + 7);
+                    processAndRenderData(currentData, newDate);
+                });
+
+                document.getElementById('week-selector').addEventListener('change', (event) => {
+                    const selectedDate = new Date(event.target.value + 'T00:00:00'); // Ensure UTC for consistency
+                    processAndRenderData(currentData, selectedDate);
+                });
+
+                // New: Expense Trend Category Select Listener
+                document.getElementById('trend-category-select').addEventListener('change', (event) => {
+                    updateExpenseTrendChart(currentData.historicalSummaries, event.target.value);
+                });
             }
 
             // Function to archive current week's data
-            function archiveCurrentWeek() {
+            function archiveCurrentWeek(weekToArchiveDate) {
+                const startOfWeekToArchive = window.getStartOfWeek(weekToArchiveDate);
+                const endOfWeekToArchive = new Date(startOfWeekToArchive);
+                endOfWeekToArchive.setDate(startOfWeekToArchive.getDate() + 6);
+                endOfWeekToArchive.setHours(23, 59, 59, 999);
+
+                // Calculate actual variable spending breakdown for the week being archived
+                const actualVariableSpendingForArchivedWeek = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                    const entryDate = new Date(entry.date + 'T00:00:00');
+                    return entryDate >= startOfWeekToArchive && entryDate <= endOfWeekToArchive;
+                });
+
+                const actualSpendingBreakdown = actualVariableSpendingForArchivedWeek.reduce((acc, item) => {
+                    acc[item.category] = (acc[item.category] || 0) + item.amount;
+                    return acc;
+                }, {});
+
                 const processed = { 
                     fixedExpensesWeekly: currentData.fixedExpenses.map(e => ({
                         category: e.category, 
@@ -1769,24 +2136,40 @@
                     })),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
                     get totalVariableBudget() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); }, 
-                    get totalActualVariableSpending() { return currentData.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0); }, 
+                    get totalActualVariableSpending() { 
+                        return actualVariableSpendingForArchivedWeek.reduce((sum, e) => sum + e.amount, 0); 
+                    }, 
                 };
+
+                // Calculate variable spending difference for the archived week
+                const totalVariableBudgetForArchivedWeek = currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0);
+                const variableSpendingDifferenceForArchivedWeek = totalVariableBudgetForArchivedWeek - processed.totalActualVariableSpending;
+
 
                 // Calculate carry-over for the week being archived (this is the carry over *into* this week)
                 let carryOverForArchivedWeek = 0;
                 if (currentData.historicalSummaries && currentData.historicalSummaries.length > 0) {
-                    carryOverForArchivedWeek = currentData.historicalSummaries[currentData.historicalSummaries.length - 1].netPosition;
+                    const relevantHistoricalSummaries = currentData.historicalSummaries.filter(summary => {
+                        const summaryDate = new Date(summary.date + 'T00:00:00');
+                        return summaryDate < startOfWeekToArchive;
+                    }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                    if (relevantHistoricalSummaries.length > 0) {
+                        carryOverForArchivedWeek = relevantHistoricalSummaries[0].netPosition;
+                    }
                 }
 
                 // Net position for the week being archived, including its own carry-over
                 const netWeeklyPositionForArchive = currentData.income.combined - processed.totalFixedWeekly - processed.totalActualVariableSpending - currentData.savingsGoal.weeklyContribution + carryOverForArchivedWeek;
 
                 const weekSummary = {
-                    date: new Date().toISOString().split('T')[0], 
+                    date: window.toYYYYMMDD(startOfWeekToArchive), // Store start date of the archived week
                     incomeCombined: currentData.income.combined,
                     totalFixedExpenses: processed.totalFixedWeekly,
-                    totalVariableBudget: processed.totalVariableBudget,
+                    totalVariableBudget: totalVariableBudgetForArchivedWeek, // Store the budgeted amount for variable expenses
                     totalActualVariableSpending: processed.totalActualVariableSpending,
+                    actualVariableSpendingBreakdown: actualSpendingBreakdown, // New: Store breakdown
+                    variableSpendingDifference: variableSpendingDifferenceForArchivedWeek, // New: Store variable spending difference
                     savingsContribution: currentData.savingsGoal.weeklyContribution,
                     netPosition: netWeeklyPositionForArchive 
                 };
@@ -1798,14 +2181,23 @@
                 console.log("Archived week summary:", weekSummary);
                 console.log("Historical summaries count:", currentData.historicalSummaries.length);
 
-                currentData.actualVariableSpendingLog = []; // Reset variable spending for the new week
+                // Remove archived transactions from currentData.actualVariableSpendingLog
+                currentData.actualVariableSpendingLog = currentData.actualVariableSpendingLog.filter(entry => {
+                    const entryDate = new Date(entry.date + 'T00:00:00');
+                    return entryDate < startOfWeekToArchive || entryDate > endOfWeekToArchive;
+                });
 
-                processAndRenderData(currentData); 
+                // Move to the next week automatically after archiving
+                const nextWeekDate = new Date(startOfWeekToArchive);
+                nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+                currentViewDate = nextWeekDate; // Update global view date to next week
+
+                processAndRenderData(currentData, currentViewDate); 
                 saveData(currentData); 
             }
 
             // Function to populate inputs and render dashboard from loaded data
-            function populateInputsAndRender(data) {
+            function populateInputsAndRender(data, initialViewDate) {
                 console.log("Starting populateInputsAndRender with data:", data);
                 // Populate income inputs
                 document.getElementById('input-emma-income').value = data.income.emma;
@@ -1822,15 +2214,18 @@
                 document.getElementById('input-savings-current').value = data.savingsGoal.current; 
 
                 // Process and render all dashboard sections based on the loaded data
-                processAndRenderData(data); 
+                processAndRenderData(data, initialViewDate); 
                 renderActualSavingsLog();
                 renderActualSavingsUsedLog();
-                renderActualVariableSpendingLog();
-                renderVariableSpendingSummary(); 
+                // renderActualVariableSpendingLog and renderVariableSpendingSummary are called by processAndRenderData
                 updateHistoricalChart(data.historicalSummaries || []); 
                 populateVariableCategoryDropdown(); // Ensure dropdown is updated
                 renderVariableCategoriesManagement(); // Render the management list
-                // Removed call to createQuickAddButtons();
+                updateExpenseTrendChart(data.historicalSummaries, document.getElementById('trend-category-select').value); // Initial render of trend chart
+                
+                // Set the initial date for the spending log input to today's date
+                document.getElementById('input-actual-variable-date').value = window.toYYYYMMDD(new Date());
+
                 console.log("Finished populateInputsAndRender. Dashboard rendering complete.");
             }
 
@@ -1853,9 +2248,21 @@
                 });
             });
 
+            // Initial dark mode check
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('dark-mode-icon').className = 'fas fa-moon';
+            } else {
+                document.getElementById('dark-mode-icon').className = 'fas fa-sun';
+            }
+
 
             async function initializeFirebaseAndLoadData() {
                 console.log("Attempting to initialize Firebase and load data...");
+                console.log("Current Date (new Date()):", new Date());
+                console.log("Start of Current Week (Wednesday):", window.getStartOfWeek(new Date()));
+
                 try {
                     const app = initializeApp(firebaseConfig);
                     console.log("Firebase app initialized.");
@@ -1909,16 +2316,21 @@
                             loadedData.savingsGoal.milestonesReached = loadedData.savingsGoal.milestonesReached || []; // Initialize if missing
 
                             loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
-                            loadedData.historicalSummaries = loadedData.historicalSummaries || []; 
+                            // Ensure actualVariableSpendingBreakdown is initialized for historical summaries
+                            loadedData.historicalSummaries = (loadedData.historicalSummaries || []).map(summary => ({
+                                ...summary,
+                                actualVariableSpendingBreakdown: summary.actualVariableSpendingBreakdown || {},
+                                variableSpendingDifference: summary.variableSpendingDifference ?? 0 // Initialize if missing
+                            })); 
 
                             console.log("Current savings after data loading (from onSnapshot):", loadedData.savingsGoal.current);
-                            // Use the loaded data to populate and render
-                            populateInputsAndRender(loadedData);
+                            // Use the loaded data to populate and render, starting from today's week
+                            populateInputsAndRender(loadedData, new Date()); // Pass new Date() for initial view
                             loadingOverlay.style.display = 'none'; 
                         } else {
                             console.log("No financial data found in Firestore for the shared document, initializing with default data and saving.");
                             currentData = JSON.parse(JSON.stringify(defaultData)); 
-                            populateInputsAndRender(currentData);
+                            populateInputsAndRender(currentData, new Date()); // Pass new Date() for initial view
                             saveData(currentData); 
                             loadingOverlay.style.display = 'none'; 
                         }
@@ -1929,14 +2341,14 @@
                             console.error("PERMISSION DENIED: Please check your Firestore Security Rules in Firebase Console. Ensure 'allow read, write: if request.auth != null;' is correctly set for the shared data path /artifacts/my-finance-dashboard/sharedData/financialDashboard.");
                         }
                         currentData = JSON.parse(JSON.stringify(defaultData)); 
-                        populateInputsAndRender(currentData);
+                        populateInputsAndRender(currentData, new Date()); // Pass new Date() for initial view
                     });
 
                 } catch (error) {
                     console.error("FATAL ERROR: Error initializing Firebase or signing in:", error);
                     loadingOverlay.style.display = 'none'; 
                     currentData = JSON.parse(JSON.stringify(defaultData)); 
-                    populateInputsAndRender(currentData);
+                    populateInputsAndRender(currentData, new Date()); // Pass new Date() for initial view
                 }
             }
 
