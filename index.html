@@ -353,6 +353,18 @@
         <p class="ml-3 text-lg text-indigo-700">Loading data...</p>
     </div>
 
+    <!-- Confirmation Modal Structure -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <h3 class="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Confirm Archive</h3>
+            <p class="text-slate-700 dark:text-slate-300 mb-6">Are you sure you want to archive the current week and start a new one? This action cannot be undone.</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-archive-modal-btn" class="btn-danger">Confirm Archive</button>
+                <button id="cancel-archive-modal-btn" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container mx-auto p-4 md:p-8">
         
         <header class="text-center mb-8 relative">
@@ -716,6 +728,15 @@
                             </div>
                         </div>
 
+                        <div class="mb-6">
+                            <h3 class="sub-section-header">Notification Settings</h3>
+                            <div>
+                                <label for="input-notification-email" class="form-label">Email for Notifications (In-App Only)</label>
+                                <input type="email" id="input-notification-email" class="form-input" placeholder="your.email@example.com" aria-label="Notification Email">
+                                <p class="text-xs text-slate-500 mt-1">Note: Email notifications require a backend service (e.g., Firebase Cloud Functions) and are not supported directly by this client-side app. This field is for reference only.</p>
+                            </div>
+                        </div>
+
                         <button id="update-dashboard-button" class="btn-primary w-full">
                             Update Dashboard
                         </button>
@@ -764,6 +785,7 @@
             const firebaseConfig = {
                 apiKey: "AIzaSyBbNEUnjH18OT2CUfnLjSy8JzXsnSG_VFI",
                 authDomain: "my-finance-dashboard-b09c7.firebaseapp.com",
+                databaseURL: "https://my-finance-dashboard-b09c7-default-rtdb.firebaseio.com",
                 projectId: "my-finance-dashboard-b09c7",
                 storageBucket: "my-finance-dashboard-b09c7.firebasestorage.app",
                 messagingSenderId: "677172862509",
@@ -829,7 +851,8 @@
                     milestonesReached: [] // New: Track reached milestones
                 },
                 actualVariableSpendingLog: [], // Cleared for current week
-                historicalSummaries: [] // Cleared, now includes spending breakdown
+                historicalSummaries: [], // Cleared, now includes spending breakdown
+                notificationEmail: '' // New: Field for notification email
             };
 
 
@@ -1010,7 +1033,7 @@
             }
 
             // Function to render actual variable spending for the CURRENTLY VIEWED week
-            function renderActualVariableSpendingLog(weekStartDate) {
+            function renderActualVariableSpendingLog(weekStartDate, isArchivedWeek, archivedSpendingLog = []) {
                 const dataInputList = document.getElementById('actual-variable-spending-list');
                 const weeklyBreakdownList = document.getElementById('weekly-actual-variable-spending-list'); 
                 const noMessageDataInput = document.getElementById('no-actual-variable-spending-message');
@@ -1018,31 +1041,28 @@
                 dataInputList.innerHTML = ''; 
                 weeklyBreakdownList.innerHTML = ''; 
 
-                const startOfWeek = window.getStartOfWeek(weekStartDate);
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Tuesday)
-                endOfWeek.setHours(23, 59, 59, 999); // Set to end of day
+                let spendingToDisplay = [];
+                if (isArchivedWeek) {
+                    spendingToDisplay = archivedSpendingLog;
+                } else {
+                    const startOfWeek = window.getStartOfWeek(weekStartDate);
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Tuesday)
+                    endOfWeek.setHours(23, 59, 59, 999); // Set to end of day
 
-                const filteredSpending = (currentData.actualVariableSpendingLog || []).filter(entry => {
-                    const entryDate = new Date(entry.date + 'T00:00:00'); // Ensure comparison is date-only
-                    return entryDate >= startOfWeek && entryDate <= endOfWeek;
-                });
+                    spendingToDisplay = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                        const entryDate = new Date(entry.date + 'T00:00:00'); // Ensure comparison is date-only
+                        return entryDate >= startOfWeek && entryDate <= endOfWeek;
+                    });
+                }
 
-                if (filteredSpending.length === 0) {
+                if (spendingToDisplay.length === 0) {
                     noMessageDataInput.classList.remove('hidden');
                 } else {
                     noMessageDataInput.classList.add('hidden');
                     // Sort by date descending for display
-                    const sortedLogs = [...filteredSpending].sort((a, b) => new Date(b.date) - new Date(a.date)); 
+                    const sortedLogs = [...spendingToDisplay].sort((a, b) => new Date(b.date) - new Date(a.date)); 
                     sortedLogs.forEach((entry, index) => {
-                        // Find the original index in the unfiltered array to correctly delete
-                        const originalIndex = currentData.actualVariableSpendingLog.findIndex(item => 
-                            item.category === entry.category && 
-                            item.amount === entry.amount && 
-                            item.date === entry.date && 
-                            item.description === entry.description
-                        );
-
                         const liDataInput = document.createElement('li');
                         liDataInput.className = 'p-2 log-entry flex justify-between items-center';
                         let textContent = `${formatDate(new Date(entry.date))}: ${entry.category} - ${formatCurrency(entry.amount)}`;
@@ -1051,9 +1071,9 @@
                         }
                         liDataInput.innerHTML = `
                             <span>${textContent}</span>
-                            <button type="button" class="delete-btn" data-log-type="variable-spending" data-index="${originalIndex}">
+                            ${!isArchivedWeek ? `<button type="button" class="delete-btn" data-log-type="variable-spending" data-index="${currentData.actualVariableSpendingLog.indexOf(entry)}">
                                 <i class="fas fa-trash-alt"></i>
-                            </button>
+                            </button>` : ''}
                         `;
                         dataInputList.appendChild(liDataInput);
 
@@ -1069,12 +1089,15 @@
             }
 
             // Render Variable Spending Summary (Budget vs. Actual) for the CURRENTLY VIEWED week
-            function renderVariableSpendingSummary(weekStartDate) {
+            function renderVariableSpendingSummary(weekStartDate, isArchivedWeek, archivedSpendingLog = [], archivedVariableBudget = []) {
                 const tableBody = document.getElementById('variable-spending-summary-table');
                 tableBody.innerHTML = '';
 
                 let totalBudgeted = 0;
                 let totalActual = 0;
+
+                let variableExpensesToUse = isArchivedWeek ? archivedVariableBudget : currentData.variableExpenses;
+                let actualSpendingToUse = isArchivedWeek ? archivedSpendingLog : currentData.actualVariableSpendingLog;
 
                 const startOfWeek = window.getStartOfWeek(weekStartDate);
                 const endOfWeek = new Date(startOfWeek);
@@ -1082,8 +1105,8 @@
                 endOfWeek.setHours(23, 59, 59, 999);
 
 
-                // Filter actual spending for the current week
-                const filteredSpending = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                // Filter actual spending for the current week (or archived week)
+                const filteredSpending = actualSpendingToUse.filter(entry => {
                     const entryDate = new Date(entry.date + 'T00:00:00');
                     return entryDate >= startOfWeek && entryDate <= endOfWeek;
                 });
@@ -1095,7 +1118,7 @@
                 }, {});
 
                 // Iterate through budgeted categories to build the summary table
-                currentData.variableExpenses.forEach(budgetCategory => {
+                variableExpensesToUse.forEach(budgetCategory => {
                     const budgetedAmount = budgetCategory.budget;
                     const actualAmount = actualSpendingByCategory[budgetCategory.name] || 0;
                     const difference = budgetedAmount - actualAmount;
@@ -1106,7 +1129,7 @@
                     row.innerHTML = `
                         <td class="p-3">${budgetCategory.name}</td>
                         <td class="p-3 text-right">
-                            <input type="number" class="budgeted-variable-amount form-input text-right text-sm" data-category="${budgetCategory.name}" value="${budgetedAmount}" aria-label="${budgetCategory.name} Budgeted Amount">
+                            ${!isArchivedWeek ? `<input type="number" class="budgeted-variable-amount form-input text-right text-sm" data-category="${budgetCategory.name}" value="${budgetedAmount}" aria-label="${budgetCategory.name} Budgeted Amount">` : formatCurrency(budgetedAmount)}
                         </td>
                         <td class="p-3 text-right ${actualAmount > budgetedAmount ? 'text-overrun font-semibold' : ''}">${formatCurrency(actualAmount)}</td>
                         <td class="p-3 text-right ${differenceClass}">${formatCurrency(difference)}</td>
@@ -1166,19 +1189,22 @@
                     totalActualElement.classList.remove('text-overrun');
                 }
 
-                document.querySelectorAll('.budgeted-variable-amount').forEach(input => {
-                    input.addEventListener('input', (event) => {
-                        const categoryName = event.target.dataset.category;
-                        const newBudget = parseFloat(event.target.value) || 0;
+                // Only attach event listeners if it's not an archived week
+                if (!isArchivedWeek) {
+                    document.querySelectorAll('.budgeted-variable-amount').forEach(input => {
+                        input.addEventListener('input', (event) => {
+                            const categoryName = event.target.dataset.category;
+                            const newBudget = parseFloat(event.target.value) || 0;
 
-                        const categoryIndex = currentData.variableExpenses.findIndex(cat => cat.name === categoryName);
-                        if (categoryIndex !== -1) {
-                            currentData.variableExpenses[categoryIndex].budget = newBudget;
-                            processAndRenderData(currentData, currentViewDate); // Re-render with current view date
-                            saveData(currentData);
-                        }
+                            const categoryIndex = currentData.variableExpenses.findIndex(cat => cat.name === categoryName);
+                            if (categoryIndex !== -1) {
+                                currentData.variableExpenses[categoryIndex].budget = newBudget;
+                                processAndRenderData(currentData, currentViewDate); // Re-render with current view date
+                                saveData(currentData);
+                            }
+                        });
                     });
-                });
+                }
             }
 
             // Function to populate the variable expense category dropdown
@@ -1237,11 +1263,6 @@
                 }
             }
 
-            // Function to create quick-add buttons for common variable expenses - REMOVED
-            function createQuickAddButtons() {
-                // This function is now empty as quick-add buttons are removed.
-            }
-
 
             function parseInputData() {
                 const parsed = {};
@@ -1286,9 +1307,97 @@
                 parsed.variableExpenses = currentData.variableExpenses; 
                 parsed.actualVariableSpendingLog = currentData.actualVariableSpendingLog || [];
                 parsed.historicalSummaries = currentData.historicalSummaries || [];
+                parsed.notificationEmail = document.getElementById('input-notification-email').value.trim();
 
                 return parsed;
             }
+
+            // Function to enable/disable inputs and buttons based on whether the week is archived
+            function toggleInputsForArchivedWeek(isArchived) {
+                const inputsAndButtons = [
+                    document.getElementById('input-actual-variable-category'),
+                    document.getElementById('input-actual-variable-amount'),
+                    document.getElementById('input-actual-variable-description'),
+                    document.getElementById('input-actual-variable-date'),
+                    document.getElementById('add-actual-variable-spending-button'),
+                    document.getElementById('add-fixed-expense-button'),
+                    document.getElementById('update-dashboard-button'),
+                    document.getElementById('new-variable-category-name'),
+                    document.getElementById('add-variable-category-button'),
+                    document.getElementById('input-weekly-actual-amount'),
+                    document.getElementById('input-weekly-actual-date'),
+                    document.getElementById('add-actual-saving-button'),
+                    document.getElementById('input-savings-used-amount'),
+                    document.getElementById('input-savings-used-reason'),
+                    document.getElementById('input-savings-used-date'),
+                    document.getElementById('add-savings-used-button'),
+                    document.getElementById('input-emma-income'),
+                    document.getElementById('input-jordan-income'),
+                    document.getElementById('input-savings-target'),
+                    document.getElementById('input-weekly-contribution'),
+                    document.getElementById('input-savings-start-date'),
+                    document.getElementById('input-notification-email'), // New: Notification email input
+                    // The archive button itself is handled separately for text change
+                ];
+
+                inputsAndButtons.forEach(element => {
+                    if (element) {
+                        element.disabled = isArchived;
+                        if (isArchived) {
+                            element.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            element.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                });
+
+                // Handle dynamically created fixed expense rows
+                document.querySelectorAll('.fixed-expense-row input, .fixed-expense-row select, .fixed-expense-row button').forEach(element => {
+                    element.disabled = isArchived;
+                    if (isArchived) {
+                        element.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        element.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+
+                // Handle dynamically created variable category remove buttons
+                document.querySelectorAll('.remove-variable-category-button').forEach(element => {
+                    element.disabled = isArchived;
+                    if (isArchived) {
+                        element.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        element.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+
+                // Handle budgeted variable amount inputs (these are created dynamically)
+                document.querySelectorAll('.budgeted-variable-amount').forEach(element => {
+                    element.disabled = isArchived;
+                    if (isArchived) {
+                        element.classList.add('opacity-50', 'cursor-not-allowed');
+                        element.readOnly = true; // Make it truly read-only
+                    } else {
+                        element.classList.remove('opacity-50', 'cursor-not-allowed');
+                        element.readOnly = false;
+                    }
+                });
+
+                // Special handling for the archive button text
+                const archiveBtn = document.getElementById('archive-week-button');
+                if (archiveBtn) {
+                    if (isArchived) {
+                        archiveBtn.textContent = 'Week Archived (Read-Only)';
+                        archiveBtn.classList.remove('btn-primary');
+                        archiveBtn.classList.add('btn-secondary'); // Change style to indicate disabled/read-only
+                    } else {
+                        archiveBtn.textContent = 'Archive Current Week & Start New';
+                        archiveBtn.classList.remove('btn-secondary');
+                        archiveBtn.classList.add('btn-primary');
+                    }
+                }
+            }
+
 
             // Main rendering function, now takes a view date
             function processAndRenderData(dataToUse, viewDate) {
@@ -1300,6 +1409,13 @@
                 const startOfViewWeek = window.getStartOfWeek(currentViewDate);
                 document.getElementById('week-selector').value = window.toYYYYMMDD(startOfViewWeek);
 
+                // Check if the current view week is an archived week
+                const archivedSummary = currentData.historicalSummaries.find(summary => {
+                    const summaryDate = new Date(summary.date + 'T00:00:00');
+                    return summaryDate.getTime() === startOfViewWeek.getTime();
+                });
+                const isCurrentWeekArchived = !!archivedSummary;
+
                 // Directly use currentData.savingsGoal.current for the input field
                 document.getElementById('input-savings-current').value = currentData.savingsGoal.current; 
 
@@ -1310,36 +1426,39 @@
                         weekly: getWeeklyAmount(e.amount, e.freq)
                     })),
                     get totalFixedWeekly() { return this.fixedExpensesWeekly.reduce((sum, e) => sum + e.weekly, 0); },
-                    get totalVariableBudget() { return currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); }, 
+                    get totalVariableBudget() { 
+                        // If archived week, use its budgeted amount, otherwise use current
+                        return isCurrentWeekArchived && archivedSummary ? archivedSummary.totalVariableBudget : currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0); 
+                    }, 
                 };
 
                 // Filter actual variable spending for the current view week
-                const endOfWeek = new Date(startOfViewWeek);
-                endOfWeek.setDate(startOfViewWeek.getDate() + 6);
-                endOfWeek.setHours(23, 59, 59, 999);
-
-
-                const actualVariableSpendingForViewWeek = (currentData.actualVariableSpendingLog || []).filter(entry => {
-                    const entryDate = new Date(entry.date + 'T00:00:00');
-                    return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
-                }).reduce((sum, e) => sum + e.amount, 0);
+                const actualVariableSpendingForViewWeek = isCurrentWeekArchived && archivedSummary ? 
+                                                            archivedSummary.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0) :
+                                                            (currentData.actualVariableSpendingLog || []).filter(entry => {
+                                                                const entryDate = new Date(entry.date + 'T00:00:00');
+                                                                const startOfWeek = window.getStartOfWeek(currentViewDate);
+                                                                const endOfWeek = new Date(startOfWeek);
+                                                                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                                                                endOfWeek.setHours(23, 59, 59, 999);
+                                                                return entryDate >= startOfWeek && entryDate <= endOfWeek;
+                                                            }).reduce((sum, e) => sum + e.amount, 0);
                 processed.totalActualVariableSpending = actualVariableSpendingForViewWeek;
                 processed.totalExpensesWeekly = processed.totalFixedWeekly + processed.totalActualVariableSpending;
 
 
-                // Calculate carry-over from the last archived week
+                // Calculate carry-over from the *immediately preceding* archived week
                 let carryOver = 0;
-                if (currentData.historicalSummaries && currentData.historicalSummaries.length > 0) {
-                    // Find the most recent archived week *before* the current view week
-                    const relevantHistoricalSummaries = currentData.historicalSummaries.filter(summary => {
-                        const summaryDate = new Date(summary.date + 'T00:00:00');
-                        return summaryDate < startOfViewWeek;
-                    }).sort((a,b) => new Date(b.date) - new Date(a.date)); // Sort descending by date
+                const prevWeekStartDate = new Date(startOfViewWeek);
+                prevWeekStartDate.setDate(startOfViewWeek.getDate() - 7);
+                const previousWeekSummary = currentData.historicalSummaries.find(summary => 
+                    new Date(summary.date + 'T00:00:00').getTime() === prevWeekStartDate.getTime()
+                );
 
-                    if (relevantHistoricalSummaries.length > 0) {
-                        carryOver = relevantHistoricalSummaries[0].netPosition;
-                    }
+                if (previousWeekSummary) {
+                    carryOver = previousWeekSummary.netPosition;
                 }
+                
                 const combinedCarryOverElement = document.getElementById('combined-carry-over');
                 if (combinedCarryOverElement) {
                     combinedCarryOverElement.textContent = formatCurrency(carryOver);
@@ -1400,10 +1519,14 @@
                 const allExpenseCategories = [
                     ...processed.fixedExpensesWeekly.map(e => ({ name: e.category, weekly: e.weekly })), 
                     // Use actual variable spending for the VIEWED week for this chart
-                    ...actualVariableSpendingForViewWeek > 0 ? currentData.actualVariableSpendingLog.filter(entry => {
+                    ...(isCurrentWeekArchived && archivedSummary ? archivedSummary.actualVariableSpendingLog : currentData.actualVariableSpendingLog).filter(entry => {
                         const entryDate = new Date(entry.date + 'T00:00:00');
-                        return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
-                    }).map(v => ({ name: v.category, weekly: v.amount })) : []
+                        const startOfWeek = window.getStartOfWeek(currentViewDate);
+                        const endOfWeek = new Date(startOfWeek);
+                        endOfWeek.setDate(startOfWeek.getDate() + 6);
+                        endOfWeek.setHours(23, 59, 59, 999);
+                        return entryDate >= startOfWeek && entryDate <= endOfWeek;
+                    }).map(v => ({ name: v.category, weekly: v.amount }))
                 ];
                 const aggregatedCategories = allExpenseCategories.reduce((acc, item) => {
                     acc[item.name] = (acc[item.name] || 0) + item.weekly;
@@ -1478,12 +1601,49 @@
                 }
 
                 // Call new rendering functions for new features
-                renderActualVariableSpendingLog(currentViewDate); // Pass currentViewDate
-                renderVariableSpendingSummary(currentViewDate); // Pass currentViewDate
+                renderActualVariableSpendingLog(currentViewDate, isCurrentWeekArchived, archivedSummary ? archivedSummary.actualVariableSpendingLog : []); // Pass archived log
+                renderVariableSpendingSummary(currentViewDate, isCurrentWeekArchived, archivedSummary ? archivedSummary.actualVariableSpendingLog : [], archivedSummary ? archivedSummary.variableExpensesAtArchive : []); // Pass archived log and budget
                 updateHistoricalChart(currentData.historicalSummaries);
                 populateVariableCategoryDropdown(); // Update dropdown with current categories
                 renderVariableCategoriesManagement(); // Update management list
                 updateExpenseTrendChart(currentData.historicalSummaries, document.getElementById('trend-category-select').value); // Update trend chart
+                
+                // Toggle inputs based on whether the week is archived
+                toggleInputsForArchivedWeek(isCurrentWeekArchived);
+
+                // --- Notification Logic ---
+                const today = new Date();
+                const currentWeekStart = window.toYYYYMMDD(window.getStartOfWeek(today));
+                const lastNetPositionNotification = JSON.parse(localStorage.getItem('lastNetPositionNotification')) || {};
+                const lastWednesdayReminder = localStorage.getItem('lastWednesdayReminder');
+
+                // Net Weekly Position Notifications
+                if (window.toYYYYMMDD(startOfViewWeek) === currentWeekStart && !isCurrentWeekArchived) { // Only for current, unarchived week
+                    if (netWeeklyPosition >= 50 && (lastNetPositionNotification.value < 50 || lastNetPositionNotification.week !== currentWeekStart)) {
+                        showToast(`Great job! Your Net Weekly Position is ${formatCurrency(netWeeklyPosition)}!`, 'success');
+                        localStorage.setItem('lastNetPositionNotification', JSON.stringify({ value: netWeeklyPosition, week: currentWeekStart }));
+                    } else if (netWeeklyPosition <= 0 && (lastNetPositionNotification.value > 0 || lastNetPositionNotification.week !== currentWeekStart)) {
+                        showToast(`Heads up! Your Net Weekly Position is ${formatCurrency(netWeeklyPosition)}. Consider adjusting spending.`, 'error');
+                        localStorage.setItem('lastNetPositionNotification', JSON.stringify({ value: netWeeklyPosition, week: currentWeekStart }));
+                    }
+                } else if (window.toYYYYMMDD(startOfViewWeek) !== currentWeekStart && lastNetPositionNotification.week === currentWeekStart) {
+                    // Reset notification for a new week if we've navigated away from the current one
+                    localStorage.removeItem('lastNetPositionNotification');
+                }
+
+
+                // Wednesday Morning Reminders (only if viewing the actual current week)
+                if (today.getDay() === 3 && window.toYYYYMMDD(startOfViewWeek) === currentWeekStart) { // Wednesday (3)
+                    if (lastWednesdayReminder !== window.toYYYYMMDD(today)) {
+                        showToast("Reminder: It's Wednesday! Don't forget to archive the previous week and update your savings goals!", 'info', 7000);
+                        localStorage.setItem('lastWednesdayReminder', window.toYYYYMMDD(today));
+                    }
+                } else if (today.getDay() !== 3 && lastWednesdayReminder === window.toYYYYMMDD(today)) {
+                    // Clear the reminder flag if it's no longer Wednesday
+                    localStorage.removeItem('lastWednesdayReminder');
+                }
+
+
                 console.log("Finished processAndRenderData.");
             }
 
@@ -1920,27 +2080,24 @@
                 });
 
                 // Archive Week button event listener
-                document.getElementById('archive-week-button').addEventListener('click', () => {
-                    showToast('Click again to confirm archiving the current week.', 'info', 5000);
-                    
-                    let clickCount = 0;
-                    const confirmArchive = () => {
-                        clickCount++;
-                        if (clickCount === 2) {
-                            archiveCurrentWeek(currentViewDate); // Pass the week to archive
-                            showToast('Week archived and new week started!', 'success');
-                        } else if (clickCount === 1) {
-                            showToast('Click again to confirm archiving.', 'info', 5000);
-                        }
-                    };
-                    const archiveButton = document.getElementById('archive-week-button');
-                    archiveButton.addEventListener('click', confirmArchive, { once: true });
-                    setTimeout(() => {
-                        if (clickCount < 2) {
-                            archiveButton.removeEventListener('click', confirmArchive);
-                            showToast('Archive cancelled.', 'info', 1000);
-                        }
-                    }, 5000);
+                const archiveButton = document.getElementById('archive-week-button');
+                const confirmModal = document.getElementById('confirmation-modal');
+                const confirmModalBtn = document.getElementById('confirm-archive-modal-btn');
+                const cancelModalBtn = document.getElementById('cancel-archive-modal-btn');
+
+                archiveButton.addEventListener('click', () => {
+                    confirmModal.classList.remove('hidden'); // Show the modal
+                });
+
+                confirmModalBtn.addEventListener('click', () => {
+                    confirmModal.classList.add('hidden'); // Hide modal
+                    archiveCurrentWeek(currentViewDate); // Call archive function
+                    showToast('Week archived and new week started!', 'success');
+                });
+
+                cancelModalBtn.addEventListener('click', () => {
+                    confirmModal.classList.add('hidden'); // Hide modal
+                    showToast('Archive cancelled.', 'info');
                 });
 
                 // Add Variable Category button
@@ -1998,25 +2155,35 @@
                         endOfWeek.setDate(startOfViewWeek.getDate() + 6);
                         endOfWeek.setHours(23, 59, 59, 999);
 
-                        const totalActualVariableSpending = (currentData.actualVariableSpendingLog || []).filter(entry => {
-                            const entryDate = new Date(entry.date + 'T00:00:00');
-                            return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
-                        }).reduce((sum, e) => sum + e.amount, 0);
+                        // If viewing an archived week, use its specific spending data for the prompt
+                        const archivedSummaryForPrompt = currentData.historicalSummaries.find(summary => {
+                            const summaryDate = new Date(summary.date + 'T00:00:00');
+                            return summaryDate.getTime() === startOfViewWeek.getTime();
+                        });
+
+                        const totalActualVariableSpendingForPrompt = archivedSummaryForPrompt ? 
+                                                                    archivedSummaryForPrompt.actualVariableSpendingLog.reduce((sum, e) => sum + e.amount, 0) :
+                                                                    (currentData.actualVariableSpendingLog || []).filter(entry => {
+                                                                        const entryDate = new Date(entry.date + 'T00::00');
+                                                                        return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
+                                                                    }).reduce((sum, e) => sum + e.amount, 0);
 
                         const weeklySavingsGoal = currentData.savingsGoal.weeklyContribution;
-                        const netPosition = income - totalFixedExpenses - totalActualVariableSpending - weeklySavingsGoal;
+                        const netPosition = income - totalFixedExpenses - totalActualVariableSpendingForPrompt - weeklySavingsGoal;
 
                         let prompt = `Given the following weekly financial data for the week starting ${formatDate(startOfViewWeek)}:
                         - Combined Weekly Income: ${formatCurrency(income)}
                         - Total Fixed Expenses: ${formatCurrency(totalFixedExpenses)}
-                        - Total Actual Variable Spending: ${formatCurrency(totalActualVariableSpending)}
+                        - Total Actual Variable Spending: ${formatCurrency(totalActualVariableSpendingForPrompt)}
                         - Weekly Savings Goal: ${formatCurrency(weeklySavingsGoal)}
                         - Net Weekly Position (Income - Expenses - Savings): ${formatCurrency(netPosition)}
 
                         Provide 3 actionable and practical financial tips to improve the net position, reduce expenses, or reach the savings goal faster. Focus on household budgeting advice. Present the tips as a concise, numbered list.`;
 
                         // Add details about top variable spending if available for the CURRENTLY VIEWED week
-                        const actualSpendingByCategory = (currentData.actualVariableSpendingLog || []).filter(entry => {
+                        const actualSpendingForPrompt = archivedSummaryForPrompt ? archivedSummaryForPrompt.actualVariableSpendingLog : currentData.actualVariableSpendingLog;
+
+                        const actualSpendingByCategory = actualSpendingForPrompt.filter(entry => {
                             const entryDate = new Date(entry.date + 'T00:00:00');
                             return entryDate >= startOfViewWeek && entryDate <= endOfWeek;
                         }).reduce((acc, item) => {
@@ -2145,18 +2312,16 @@
                 const totalVariableBudgetForArchivedWeek = currentData.variableExpenses.reduce((sum, e) => sum + e.budget, 0);
                 const variableSpendingDifferenceForArchivedWeek = totalVariableBudgetForArchivedWeek - processed.totalActualVariableSpending;
 
-
                 // Calculate carry-over for the week being archived (this is the carry over *into* this week)
                 let carryOverForArchivedWeek = 0;
-                if (currentData.historicalSummaries && currentData.historicalSummaries.length > 0) {
-                    const relevantHistoricalSummaries = currentData.historicalSummaries.filter(summary => {
-                        const summaryDate = new Date(summary.date + 'T00:00:00');
-                        return summaryDate < startOfWeekToArchive;
-                    }).sort((a,b) => new Date(b.date) - new Date(a.date));
+                const prevWeekStartDateForArchive = new Date(startOfWeekToArchive);
+                prevWeekStartDateForArchive.setDate(prevWeekStartDateForArchive.getDate() - 7);
+                const previousWeekSummaryForArchive = currentData.historicalSummaries.find(summary => 
+                    new Date(summary.date + 'T00:00:00').getTime() === prevWeekStartDateForArchive.getTime()
+                );
 
-                    if (relevantHistoricalSummaries.length > 0) {
-                        carryOverForArchivedWeek = relevantHistoricalSummaries[0].netPosition;
-                    }
+                if (previousWeekSummaryForArchive) {
+                    carryOverForArchivedWeek = previousWeekSummaryForArchive.netPosition;
                 }
 
                 // Net position for the week being archived, including its own carry-over
@@ -2167,11 +2332,13 @@
                     incomeCombined: currentData.income.combined,
                     totalFixedExpenses: processed.totalFixedWeekly,
                     totalVariableBudget: totalVariableBudgetForArchivedWeek, // Store the budgeted amount for variable expenses
+                    actualVariableSpendingLog: actualVariableSpendingForArchivedWeek, // Store detailed log for the archived week
                     totalActualVariableSpending: processed.totalActualVariableSpending,
                     actualVariableSpendingBreakdown: actualSpendingBreakdown, // New: Store breakdown
                     variableSpendingDifference: variableSpendingDifferenceForArchivedWeek, // New: Store variable spending difference
                     savingsContribution: currentData.savingsGoal.weeklyContribution,
-                    netPosition: netWeeklyPositionForArchive 
+                    netPosition: netWeeklyPositionForArchive,
+                    variableExpensesAtArchive: JSON.parse(JSON.stringify(currentData.variableExpenses)) // Store variable expenses with their budgets at archive time
                 };
 
                 if (!currentData.historicalSummaries) {
@@ -2181,10 +2348,15 @@
                 console.log("Archived week summary:", weekSummary);
                 console.log("Historical summaries count:", currentData.historicalSummaries.length);
 
-                // Remove archived transactions from currentData.actualVariableSpendingLog
+                // Filter out the archived transactions from the main actualVariableSpendingLog
                 currentData.actualVariableSpendingLog = currentData.actualVariableSpendingLog.filter(entry => {
                     const entryDate = new Date(entry.date + 'T00:00:00');
                     return entryDate < startOfWeekToArchive || entryDate > endOfWeekToArchive;
+                });
+
+                // Reset variable expense budgets to 0 for the new week
+                currentData.variableExpenses.forEach(category => {
+                    category.budget = 0;
                 });
 
                 // Move to the next week automatically after archiving
@@ -2212,6 +2384,9 @@
                 document.getElementById('input-weekly-contribution').value = data.savingsGoal.weeklyContribution;
                 document.getElementById('input-savings-start-date').value = data.savingsGoal.startDate;
                 document.getElementById('input-savings-current').value = data.savingsGoal.current; 
+
+                // Populate notification email
+                document.getElementById('input-notification-email').value = data.notificationEmail || '';
 
                 // Process and render all dashboard sections based on the loaded data
                 processAndRenderData(data, initialViewDate); 
@@ -2268,7 +2443,7 @@
                     console.log("Firebase app initialized.");
                     db = getFirestore(app);
                     auth = getAuth(app);
-                    analytics = getAnalytics(app); 
+                    analytics = getAnalytics(app); // Initialize analytics
                     console.log("Firebase services (Firestore, Auth, Analytics) obtained.");
 
                     console.log("Attempting anonymous sign-in...");
@@ -2297,12 +2472,13 @@
 
                             loadedData.fixedExpenses = loadedData.fixedExpenses || [];
                             
-                            // Load variableExpenses, ensuring names match defaultData structure
-                            // It's important to merge/ensure categories exist from defaultData if they were somehow lost
-                            // but preserve existing budget values for matching names.
-                            let mergedVariableExpenses = defaultData.variableExpenses.map(defaultVar => {
-                                const loadedVar = (loadedData.variableExpenses || []).find(lv => lv.name === defaultVar.name);
-                                return loadedVar ? { ...defaultVar, budget: loadedVar.budget } : { ...defaultVar };
+                            // Load variableExpenses, ensuring new categories added by user persist
+                            let mergedVariableExpenses = loadedData.variableExpenses || []; // Start with loaded categories
+                            defaultData.variableExpenses.forEach(defaultVar => {
+                                // Add default categories if they don't already exist in loaded data
+                                if (!mergedVariableExpenses.some(lv => lv.name === defaultVar.name)) {
+                                    mergedVariableExpenses.push({ ...defaultVar }); // Add with default budget (which is 0 in defaultData)
+                                }
                             });
                             loadedData.variableExpenses = mergedVariableExpenses;
                             
@@ -2316,12 +2492,15 @@
                             loadedData.savingsGoal.milestonesReached = loadedData.savingsGoal.milestonesReached || []; // Initialize if missing
 
                             loadedData.actualVariableSpendingLog = loadedData.actualVariableSpendingLog || [];
-                            // Ensure actualVariableSpendingBreakdown is initialized for historical summaries
+                            // Ensure actualVariableSpendingBreakdown and actualVariableSpendingLog are initialized for historical summaries
                             loadedData.historicalSummaries = (loadedData.historicalSummaries || []).map(summary => ({
                                 ...summary,
                                 actualVariableSpendingBreakdown: summary.actualVariableSpendingBreakdown || {},
-                                variableSpendingDifference: summary.variableSpendingDifference ?? 0 // Initialize if missing
+                                variableSpendingDifference: summary.variableSpendingDifference ?? 0, // Initialize if missing
+                                actualVariableSpendingLog: summary.actualVariableSpendingLog || [], // Ensure detailed log is present
+                                variableExpensesAtArchive: summary.variableExpensesAtArchive || [] // Ensure variable expenses at archive are present
                             })); 
+                            loadedData.notificationEmail = loadedData.notificationEmail || ''; // Initialize notification email
 
                             console.log("Current savings after data loading (from onSnapshot):", loadedData.savingsGoal.current);
                             // Use the loaded data to populate and render, starting from today's week
